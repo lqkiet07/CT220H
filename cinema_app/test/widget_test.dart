@@ -7,7 +7,7 @@ void main() {
     await tester.pumpWidget(const CinemaApp());
     await tester.pumpAndSettle();
 
-    // Kiểm tra xem chữ "Home Page" có xuất hiện không
-    expect(find.textContaining('Home Page'), findsOneWidget);
+    // Kiểm tra xem chữ "CT220H Cinema" có xuất hiện không
+    expect(find.textContaining('CT220H Cinema'), findsOneWidget);
   });
 }
