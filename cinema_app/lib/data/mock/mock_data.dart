@@ -59,7 +59,8 @@ class MockData {
     List<Seat> seats = [];
     List<String> rows = ['A', 'B', 'C', 'D', 'E', 'F'];
     for (String row in rows) {
-      for (int i = 1; i <= 8; i++) {
+      int seatCount = (row == 'F') ? 4 : 8;
+      for (int i = 1; i <= seatCount; i++) {
         // Giả lập trạng thái ghế
         SeatStatus status = SeatStatus.available;
         if ((row == 'C' || row == 'D') && (i >= 3 && i <= 6)) {

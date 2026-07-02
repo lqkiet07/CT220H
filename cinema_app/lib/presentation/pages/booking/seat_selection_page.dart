@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
@@ -32,20 +33,34 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   }
 
   void _toggleSeat(Seat seat) {
-    if (seat.status == SeatStatus.booked) return; // Không thể chọn ghế đã đặt
+    if (seat.status == SeatStatus.booked) return;
+
+    // Phản hồi xúc giác (rung nhẹ) khi bấm
+    HapticFeedback.selectionClick();
 
     setState(() {
       if (selectedSeatIds.contains(seat.id)) {
         selectedSeatIds.remove(seat.id);
       } else {
+        // Giới hạn tối đa 8 ghế
+        if (selectedSeatIds.length >= 8) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bạn chỉ được chọn tối đa 8 ghế cho mỗi giao dịch!'),
+              backgroundColor: Colors.redAccent,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
         selectedSeatIds.add(seat.id);
       }
     });
   }
 
-  int _calculateTotalPrice() {
+  double _calculateTotalPrice() {
     if (movie == null) return 0;
-    int total = 0;
+    double total = 0;
     for (String seatId in selectedSeatIds) {
       final seat = allSeats.firstWhere((s) => s.id == seatId);
       if (seat.type == SeatType.standard) {
@@ -88,10 +103,20 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  children: _buildSeatRows(),
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                alignment: Alignment.center,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: _buildSeatRows(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -140,9 +165,16 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             child: Text(
               'MÀN HÌNH',
               style: TextStyle(
-                color: Colors.white54,
+                color: Colors.white,
                 letterSpacing: 2.0,
                 fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ),
@@ -167,21 +199,21 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
         Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               // Nhãn tên hàng ghế (A, B, C...)
               SizedBox(
-                width: 30,
+                width: 20,
                 child: Text(
                   rowName,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.white70,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               // Các ghế trong hàng
               ...seatsInRow.map((seat) => _buildSeatWidget(seat)).toList(),
             ],
@@ -219,14 +251,14 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     }
 
     // Ghế sweetbox thì rộng gấp đôi
-    double width = seat.type == SeatType.sweetbox ? 80.0 : 36.0;
+    double width = seat.type == SeatType.sweetbox ? 70.0 : 32.0;
 
     return GestureDetector(
       onTap: () => _toggleSeat(seat),
       child: Container(
-        margin: const EdgeInsets.only(right: 8.0),
+        margin: const EdgeInsets.only(right: 6.0),
         width: width,
-        height: 36,
+        height: 32,
         decoration: BoxDecoration(
           color: seatColor,
           borderRadius: const BorderRadius.only(
@@ -261,10 +293,10 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
   Widget _buildLegend() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Wrap(
-        spacing: 16,
-        runSpacing: 12,
+        spacing: 20,
+        runSpacing: 16,
         alignment: WrapAlignment.center,
         children: [
           _legendItem(Colors.white54, 'Thường', false),
@@ -282,8 +314,8 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 20,
-          height: 20,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
             color: isFilled ? color : AppColors.surface,
             borderRadius: BorderRadius.circular(4),
@@ -293,24 +325,25 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
       ],
     );
   }
 
   Widget _buildBottomBar(NumberFormat format) {
-    int totalPrice = _calculateTotalPrice();
+    double totalPrice = _calculateTotalPrice();
     bool hasSelection = selectedSeatIds.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.all(16.0).copyWith(bottom: 32.0),
+      padding: const EdgeInsets.all(20.0).copyWith(bottom: 32.0),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: const Color(0xFF1A1A24), // Màu tối hơn để tách biệt
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.5),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -319,25 +352,42 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Tổng cộng',
-                style: TextStyle(color: Colors.white54, fontSize: 14),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                format.format(totalPrice),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasSelection) ...[
+                  Text(
+                    'Ghế: ${(selectedSeatIds.toList()..sort()).join(', ')}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                ] else ...[
+                  const Text(
+                    'Chưa chọn ghế',
+                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Text(
+                  format.format(totalPrice),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 16),
           ElevatedButton(
             onPressed: hasSelection
                 ? () {
