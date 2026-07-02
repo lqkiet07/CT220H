@@ -11,7 +11,7 @@ class MockData {
       Movie(
         id: 'm1',
         title: 'Lật Mặt 7: Một Điều Ước',
-        posterUrl: 'https://example.com/latmat7.jpg',
+        posterUrl: 'https://i.imgur.com/mnOlHB0.jpg',
         rating: 8.5,
         durationMinutes: 120,
         basePrice: 90000,
@@ -20,7 +20,7 @@ class MockData {
       Movie(
         id: 'm2',
         title: 'Mai',
-        posterUrl: 'https://example.com/mai.jpg',
+        posterUrl: 'https://cdn-images.vtv.vn/562122370168008704/2023/11/28/photo-1-17011453442011344132442.jpg',
         rating: 7.9,
         durationMinutes: 130,
         basePrice: 100000,
