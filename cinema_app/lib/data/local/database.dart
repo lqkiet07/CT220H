@@ -12,12 +12,12 @@ part 'database.g.dart';
 // Bảng 1: Lưu vé đã đặt (Để người dùng xem offline lúc ra rạp)
 @DataClassName('Ticket')
 class Tickets extends Table {
-  IntColumn get id => integer().autoIncrement()(); // Khóa chính, tự tăng
+  IntColumn get id => integer().autoIncrement()();
   TextColumn get movieId => text()();
-  TextColumn get movieTitle => text()();
-  TextColumn get showtime => text()();
-  TextColumn get seatNumbers => text()();
-  TextColumn get qrCode => text().nullable()(); // Mã QR (có thể rỗng nếu chưa có)
+  TextColumn get bookingTime => text()(); // Thời gian đặt
+  TextColumn get qrCodeData => text()();  // Dữ liệu mã QR
+  TextColumn get seatIds => text()();     // Danh sách ID ghế
+  RealColumn get totalPrice => real()();  // Tổng tiền (kiểu double)
 }
 
 // Bảng 2: Phim yêu thích (Lưu lại danh sách phim muốn xem)

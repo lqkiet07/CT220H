@@ -32,56 +32,58 @@ class $TicketsTable extends Tickets with TableInfo<$TicketsTable, Ticket> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _movieTitleMeta = const VerificationMeta(
-    'movieTitle',
+  static const VerificationMeta _bookingTimeMeta = const VerificationMeta(
+    'bookingTime',
   );
   @override
-  late final GeneratedColumn<String> movieTitle = GeneratedColumn<String>(
-    'movie_title',
+  late final GeneratedColumn<String> bookingTime = GeneratedColumn<String>(
+    'booking_time',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _showtimeMeta = const VerificationMeta(
-    'showtime',
+  static const VerificationMeta _qrCodeDataMeta = const VerificationMeta(
+    'qrCodeData',
   );
   @override
-  late final GeneratedColumn<String> showtime = GeneratedColumn<String>(
-    'showtime',
+  late final GeneratedColumn<String> qrCodeData = GeneratedColumn<String>(
+    'qr_code_data',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _seatNumbersMeta = const VerificationMeta(
-    'seatNumbers',
+  static const VerificationMeta _seatIdsMeta = const VerificationMeta(
+    'seatIds',
   );
   @override
-  late final GeneratedColumn<String> seatNumbers = GeneratedColumn<String>(
-    'seat_numbers',
+  late final GeneratedColumn<String> seatIds = GeneratedColumn<String>(
+    'seat_ids',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _qrCodeMeta = const VerificationMeta('qrCode');
+  static const VerificationMeta _totalPriceMeta = const VerificationMeta(
+    'totalPrice',
+  );
   @override
-  late final GeneratedColumn<String> qrCode = GeneratedColumn<String>(
-    'qr_code',
+  late final GeneratedColumn<double> totalPrice = GeneratedColumn<double>(
+    'total_price',
     aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
   );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     movieId,
-    movieTitle,
-    showtime,
-    seatNumbers,
-    qrCode,
+    bookingTime,
+    qrCodeData,
+    seatIds,
+    totalPrice,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -106,38 +108,43 @@ class $TicketsTable extends Tickets with TableInfo<$TicketsTable, Ticket> {
     } else if (isInserting) {
       context.missing(_movieIdMeta);
     }
-    if (data.containsKey('movie_title')) {
+    if (data.containsKey('booking_time')) {
       context.handle(
-        _movieTitleMeta,
-        movieTitle.isAcceptableOrUnknown(data['movie_title']!, _movieTitleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_movieTitleMeta);
-    }
-    if (data.containsKey('showtime')) {
-      context.handle(
-        _showtimeMeta,
-        showtime.isAcceptableOrUnknown(data['showtime']!, _showtimeMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_showtimeMeta);
-    }
-    if (data.containsKey('seat_numbers')) {
-      context.handle(
-        _seatNumbersMeta,
-        seatNumbers.isAcceptableOrUnknown(
-          data['seat_numbers']!,
-          _seatNumbersMeta,
+        _bookingTimeMeta,
+        bookingTime.isAcceptableOrUnknown(
+          data['booking_time']!,
+          _bookingTimeMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_seatNumbersMeta);
+      context.missing(_bookingTimeMeta);
     }
-    if (data.containsKey('qr_code')) {
+    if (data.containsKey('qr_code_data')) {
       context.handle(
-        _qrCodeMeta,
-        qrCode.isAcceptableOrUnknown(data['qr_code']!, _qrCodeMeta),
+        _qrCodeDataMeta,
+        qrCodeData.isAcceptableOrUnknown(
+          data['qr_code_data']!,
+          _qrCodeDataMeta,
+        ),
       );
+    } else if (isInserting) {
+      context.missing(_qrCodeDataMeta);
+    }
+    if (data.containsKey('seat_ids')) {
+      context.handle(
+        _seatIdsMeta,
+        seatIds.isAcceptableOrUnknown(data['seat_ids']!, _seatIdsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seatIdsMeta);
+    }
+    if (data.containsKey('total_price')) {
+      context.handle(
+        _totalPriceMeta,
+        totalPrice.isAcceptableOrUnknown(data['total_price']!, _totalPriceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalPriceMeta);
     }
     return context;
   }
@@ -156,22 +163,22 @@ class $TicketsTable extends Tickets with TableInfo<$TicketsTable, Ticket> {
         DriftSqlType.string,
         data['${effectivePrefix}movie_id'],
       )!,
-      movieTitle: attachedDatabase.typeMapping.read(
+      bookingTime: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}movie_title'],
+        data['${effectivePrefix}booking_time'],
       )!,
-      showtime: attachedDatabase.typeMapping.read(
+      qrCodeData: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}showtime'],
+        data['${effectivePrefix}qr_code_data'],
       )!,
-      seatNumbers: attachedDatabase.typeMapping.read(
+      seatIds: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}seat_numbers'],
+        data['${effectivePrefix}seat_ids'],
       )!,
-      qrCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}qr_code'],
-      ),
+      totalPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_price'],
+      )!,
     );
   }
 
@@ -184,29 +191,27 @@ class $TicketsTable extends Tickets with TableInfo<$TicketsTable, Ticket> {
 class Ticket extends DataClass implements Insertable<Ticket> {
   final int id;
   final String movieId;
-  final String movieTitle;
-  final String showtime;
-  final String seatNumbers;
-  final String? qrCode;
+  final String bookingTime;
+  final String qrCodeData;
+  final String seatIds;
+  final double totalPrice;
   const Ticket({
     required this.id,
     required this.movieId,
-    required this.movieTitle,
-    required this.showtime,
-    required this.seatNumbers,
-    this.qrCode,
+    required this.bookingTime,
+    required this.qrCodeData,
+    required this.seatIds,
+    required this.totalPrice,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['movie_id'] = Variable<String>(movieId);
-    map['movie_title'] = Variable<String>(movieTitle);
-    map['showtime'] = Variable<String>(showtime);
-    map['seat_numbers'] = Variable<String>(seatNumbers);
-    if (!nullToAbsent || qrCode != null) {
-      map['qr_code'] = Variable<String>(qrCode);
-    }
+    map['booking_time'] = Variable<String>(bookingTime);
+    map['qr_code_data'] = Variable<String>(qrCodeData);
+    map['seat_ids'] = Variable<String>(seatIds);
+    map['total_price'] = Variable<double>(totalPrice);
     return map;
   }
 
@@ -214,12 +219,10 @@ class Ticket extends DataClass implements Insertable<Ticket> {
     return TicketsCompanion(
       id: Value(id),
       movieId: Value(movieId),
-      movieTitle: Value(movieTitle),
-      showtime: Value(showtime),
-      seatNumbers: Value(seatNumbers),
-      qrCode: qrCode == null && nullToAbsent
-          ? const Value.absent()
-          : Value(qrCode),
+      bookingTime: Value(bookingTime),
+      qrCodeData: Value(qrCodeData),
+      seatIds: Value(seatIds),
+      totalPrice: Value(totalPrice),
     );
   }
 
@@ -231,10 +234,10 @@ class Ticket extends DataClass implements Insertable<Ticket> {
     return Ticket(
       id: serializer.fromJson<int>(json['id']),
       movieId: serializer.fromJson<String>(json['movieId']),
-      movieTitle: serializer.fromJson<String>(json['movieTitle']),
-      showtime: serializer.fromJson<String>(json['showtime']),
-      seatNumbers: serializer.fromJson<String>(json['seatNumbers']),
-      qrCode: serializer.fromJson<String?>(json['qrCode']),
+      bookingTime: serializer.fromJson<String>(json['bookingTime']),
+      qrCodeData: serializer.fromJson<String>(json['qrCodeData']),
+      seatIds: serializer.fromJson<String>(json['seatIds']),
+      totalPrice: serializer.fromJson<double>(json['totalPrice']),
     );
   }
   @override
@@ -243,40 +246,42 @@ class Ticket extends DataClass implements Insertable<Ticket> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'movieId': serializer.toJson<String>(movieId),
-      'movieTitle': serializer.toJson<String>(movieTitle),
-      'showtime': serializer.toJson<String>(showtime),
-      'seatNumbers': serializer.toJson<String>(seatNumbers),
-      'qrCode': serializer.toJson<String?>(qrCode),
+      'bookingTime': serializer.toJson<String>(bookingTime),
+      'qrCodeData': serializer.toJson<String>(qrCodeData),
+      'seatIds': serializer.toJson<String>(seatIds),
+      'totalPrice': serializer.toJson<double>(totalPrice),
     };
   }
 
   Ticket copyWith({
     int? id,
     String? movieId,
-    String? movieTitle,
-    String? showtime,
-    String? seatNumbers,
-    Value<String?> qrCode = const Value.absent(),
+    String? bookingTime,
+    String? qrCodeData,
+    String? seatIds,
+    double? totalPrice,
   }) => Ticket(
     id: id ?? this.id,
     movieId: movieId ?? this.movieId,
-    movieTitle: movieTitle ?? this.movieTitle,
-    showtime: showtime ?? this.showtime,
-    seatNumbers: seatNumbers ?? this.seatNumbers,
-    qrCode: qrCode.present ? qrCode.value : this.qrCode,
+    bookingTime: bookingTime ?? this.bookingTime,
+    qrCodeData: qrCodeData ?? this.qrCodeData,
+    seatIds: seatIds ?? this.seatIds,
+    totalPrice: totalPrice ?? this.totalPrice,
   );
   Ticket copyWithCompanion(TicketsCompanion data) {
     return Ticket(
       id: data.id.present ? data.id.value : this.id,
       movieId: data.movieId.present ? data.movieId.value : this.movieId,
-      movieTitle: data.movieTitle.present
-          ? data.movieTitle.value
-          : this.movieTitle,
-      showtime: data.showtime.present ? data.showtime.value : this.showtime,
-      seatNumbers: data.seatNumbers.present
-          ? data.seatNumbers.value
-          : this.seatNumbers,
-      qrCode: data.qrCode.present ? data.qrCode.value : this.qrCode,
+      bookingTime: data.bookingTime.present
+          ? data.bookingTime.value
+          : this.bookingTime,
+      qrCodeData: data.qrCodeData.present
+          ? data.qrCodeData.value
+          : this.qrCodeData,
+      seatIds: data.seatIds.present ? data.seatIds.value : this.seatIds,
+      totalPrice: data.totalPrice.present
+          ? data.totalPrice.value
+          : this.totalPrice,
     );
   }
 
@@ -285,88 +290,89 @@ class Ticket extends DataClass implements Insertable<Ticket> {
     return (StringBuffer('Ticket(')
           ..write('id: $id, ')
           ..write('movieId: $movieId, ')
-          ..write('movieTitle: $movieTitle, ')
-          ..write('showtime: $showtime, ')
-          ..write('seatNumbers: $seatNumbers, ')
-          ..write('qrCode: $qrCode')
+          ..write('bookingTime: $bookingTime, ')
+          ..write('qrCodeData: $qrCodeData, ')
+          ..write('seatIds: $seatIds, ')
+          ..write('totalPrice: $totalPrice')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, movieId, movieTitle, showtime, seatNumbers, qrCode);
+      Object.hash(id, movieId, bookingTime, qrCodeData, seatIds, totalPrice);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Ticket &&
           other.id == this.id &&
           other.movieId == this.movieId &&
-          other.movieTitle == this.movieTitle &&
-          other.showtime == this.showtime &&
-          other.seatNumbers == this.seatNumbers &&
-          other.qrCode == this.qrCode);
+          other.bookingTime == this.bookingTime &&
+          other.qrCodeData == this.qrCodeData &&
+          other.seatIds == this.seatIds &&
+          other.totalPrice == this.totalPrice);
 }
 
 class TicketsCompanion extends UpdateCompanion<Ticket> {
   final Value<int> id;
   final Value<String> movieId;
-  final Value<String> movieTitle;
-  final Value<String> showtime;
-  final Value<String> seatNumbers;
-  final Value<String?> qrCode;
+  final Value<String> bookingTime;
+  final Value<String> qrCodeData;
+  final Value<String> seatIds;
+  final Value<double> totalPrice;
   const TicketsCompanion({
     this.id = const Value.absent(),
     this.movieId = const Value.absent(),
-    this.movieTitle = const Value.absent(),
-    this.showtime = const Value.absent(),
-    this.seatNumbers = const Value.absent(),
-    this.qrCode = const Value.absent(),
+    this.bookingTime = const Value.absent(),
+    this.qrCodeData = const Value.absent(),
+    this.seatIds = const Value.absent(),
+    this.totalPrice = const Value.absent(),
   });
   TicketsCompanion.insert({
     this.id = const Value.absent(),
     required String movieId,
-    required String movieTitle,
-    required String showtime,
-    required String seatNumbers,
-    this.qrCode = const Value.absent(),
+    required String bookingTime,
+    required String qrCodeData,
+    required String seatIds,
+    required double totalPrice,
   }) : movieId = Value(movieId),
-       movieTitle = Value(movieTitle),
-       showtime = Value(showtime),
-       seatNumbers = Value(seatNumbers);
+       bookingTime = Value(bookingTime),
+       qrCodeData = Value(qrCodeData),
+       seatIds = Value(seatIds),
+       totalPrice = Value(totalPrice);
   static Insertable<Ticket> custom({
     Expression<int>? id,
     Expression<String>? movieId,
-    Expression<String>? movieTitle,
-    Expression<String>? showtime,
-    Expression<String>? seatNumbers,
-    Expression<String>? qrCode,
+    Expression<String>? bookingTime,
+    Expression<String>? qrCodeData,
+    Expression<String>? seatIds,
+    Expression<double>? totalPrice,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (movieId != null) 'movie_id': movieId,
-      if (movieTitle != null) 'movie_title': movieTitle,
-      if (showtime != null) 'showtime': showtime,
-      if (seatNumbers != null) 'seat_numbers': seatNumbers,
-      if (qrCode != null) 'qr_code': qrCode,
+      if (bookingTime != null) 'booking_time': bookingTime,
+      if (qrCodeData != null) 'qr_code_data': qrCodeData,
+      if (seatIds != null) 'seat_ids': seatIds,
+      if (totalPrice != null) 'total_price': totalPrice,
     });
   }
 
   TicketsCompanion copyWith({
     Value<int>? id,
     Value<String>? movieId,
-    Value<String>? movieTitle,
-    Value<String>? showtime,
-    Value<String>? seatNumbers,
-    Value<String?>? qrCode,
+    Value<String>? bookingTime,
+    Value<String>? qrCodeData,
+    Value<String>? seatIds,
+    Value<double>? totalPrice,
   }) {
     return TicketsCompanion(
       id: id ?? this.id,
       movieId: movieId ?? this.movieId,
-      movieTitle: movieTitle ?? this.movieTitle,
-      showtime: showtime ?? this.showtime,
-      seatNumbers: seatNumbers ?? this.seatNumbers,
-      qrCode: qrCode ?? this.qrCode,
+      bookingTime: bookingTime ?? this.bookingTime,
+      qrCodeData: qrCodeData ?? this.qrCodeData,
+      seatIds: seatIds ?? this.seatIds,
+      totalPrice: totalPrice ?? this.totalPrice,
     );
   }
 
@@ -379,17 +385,17 @@ class TicketsCompanion extends UpdateCompanion<Ticket> {
     if (movieId.present) {
       map['movie_id'] = Variable<String>(movieId.value);
     }
-    if (movieTitle.present) {
-      map['movie_title'] = Variable<String>(movieTitle.value);
+    if (bookingTime.present) {
+      map['booking_time'] = Variable<String>(bookingTime.value);
     }
-    if (showtime.present) {
-      map['showtime'] = Variable<String>(showtime.value);
+    if (qrCodeData.present) {
+      map['qr_code_data'] = Variable<String>(qrCodeData.value);
     }
-    if (seatNumbers.present) {
-      map['seat_numbers'] = Variable<String>(seatNumbers.value);
+    if (seatIds.present) {
+      map['seat_ids'] = Variable<String>(seatIds.value);
     }
-    if (qrCode.present) {
-      map['qr_code'] = Variable<String>(qrCode.value);
+    if (totalPrice.present) {
+      map['total_price'] = Variable<double>(totalPrice.value);
     }
     return map;
   }
@@ -399,10 +405,10 @@ class TicketsCompanion extends UpdateCompanion<Ticket> {
     return (StringBuffer('TicketsCompanion(')
           ..write('id: $id, ')
           ..write('movieId: $movieId, ')
-          ..write('movieTitle: $movieTitle, ')
-          ..write('showtime: $showtime, ')
-          ..write('seatNumbers: $seatNumbers, ')
-          ..write('qrCode: $qrCode')
+          ..write('bookingTime: $bookingTime, ')
+          ..write('qrCodeData: $qrCodeData, ')
+          ..write('seatIds: $seatIds, ')
+          ..write('totalPrice: $totalPrice')
           ..write(')'))
         .toString();
   }
@@ -692,19 +698,19 @@ typedef $$TicketsTableCreateCompanionBuilder =
     TicketsCompanion Function({
       Value<int> id,
       required String movieId,
-      required String movieTitle,
-      required String showtime,
-      required String seatNumbers,
-      Value<String?> qrCode,
+      required String bookingTime,
+      required String qrCodeData,
+      required String seatIds,
+      required double totalPrice,
     });
 typedef $$TicketsTableUpdateCompanionBuilder =
     TicketsCompanion Function({
       Value<int> id,
       Value<String> movieId,
-      Value<String> movieTitle,
-      Value<String> showtime,
-      Value<String> seatNumbers,
-      Value<String?> qrCode,
+      Value<String> bookingTime,
+      Value<String> qrCodeData,
+      Value<String> seatIds,
+      Value<double> totalPrice,
     });
 
 class $$TicketsTableFilterComposer
@@ -726,23 +732,23 @@ class $$TicketsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get movieTitle => $composableBuilder(
-    column: $table.movieTitle,
+  ColumnFilters<String> get bookingTime => $composableBuilder(
+    column: $table.bookingTime,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get showtime => $composableBuilder(
-    column: $table.showtime,
+  ColumnFilters<String> get qrCodeData => $composableBuilder(
+    column: $table.qrCodeData,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get seatNumbers => $composableBuilder(
-    column: $table.seatNumbers,
+  ColumnFilters<String> get seatIds => $composableBuilder(
+    column: $table.seatIds,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get qrCode => $composableBuilder(
-    column: $table.qrCode,
+  ColumnFilters<double> get totalPrice => $composableBuilder(
+    column: $table.totalPrice,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -766,23 +772,23 @@ class $$TicketsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get movieTitle => $composableBuilder(
-    column: $table.movieTitle,
+  ColumnOrderings<String> get bookingTime => $composableBuilder(
+    column: $table.bookingTime,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get showtime => $composableBuilder(
-    column: $table.showtime,
+  ColumnOrderings<String> get qrCodeData => $composableBuilder(
+    column: $table.qrCodeData,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get seatNumbers => $composableBuilder(
-    column: $table.seatNumbers,
+  ColumnOrderings<String> get seatIds => $composableBuilder(
+    column: $table.seatIds,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get qrCode => $composableBuilder(
-    column: $table.qrCode,
+  ColumnOrderings<double> get totalPrice => $composableBuilder(
+    column: $table.totalPrice,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -802,21 +808,23 @@ class $$TicketsTableAnnotationComposer
   GeneratedColumn<String> get movieId =>
       $composableBuilder(column: $table.movieId, builder: (column) => column);
 
-  GeneratedColumn<String> get movieTitle => $composableBuilder(
-    column: $table.movieTitle,
+  GeneratedColumn<String> get bookingTime => $composableBuilder(
+    column: $table.bookingTime,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get showtime =>
-      $composableBuilder(column: $table.showtime, builder: (column) => column);
-
-  GeneratedColumn<String> get seatNumbers => $composableBuilder(
-    column: $table.seatNumbers,
+  GeneratedColumn<String> get qrCodeData => $composableBuilder(
+    column: $table.qrCodeData,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get qrCode =>
-      $composableBuilder(column: $table.qrCode, builder: (column) => column);
+  GeneratedColumn<String> get seatIds =>
+      $composableBuilder(column: $table.seatIds, builder: (column) => column);
+
+  GeneratedColumn<double> get totalPrice => $composableBuilder(
+    column: $table.totalPrice,
+    builder: (column) => column,
+  );
 }
 
 class $$TicketsTableTableManager
@@ -849,33 +857,33 @@ class $$TicketsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> movieId = const Value.absent(),
-                Value<String> movieTitle = const Value.absent(),
-                Value<String> showtime = const Value.absent(),
-                Value<String> seatNumbers = const Value.absent(),
-                Value<String?> qrCode = const Value.absent(),
+                Value<String> bookingTime = const Value.absent(),
+                Value<String> qrCodeData = const Value.absent(),
+                Value<String> seatIds = const Value.absent(),
+                Value<double> totalPrice = const Value.absent(),
               }) => TicketsCompanion(
                 id: id,
                 movieId: movieId,
-                movieTitle: movieTitle,
-                showtime: showtime,
-                seatNumbers: seatNumbers,
-                qrCode: qrCode,
+                bookingTime: bookingTime,
+                qrCodeData: qrCodeData,
+                seatIds: seatIds,
+                totalPrice: totalPrice,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String movieId,
-                required String movieTitle,
-                required String showtime,
-                required String seatNumbers,
-                Value<String?> qrCode = const Value.absent(),
+                required String bookingTime,
+                required String qrCodeData,
+                required String seatIds,
+                required double totalPrice,
               }) => TicketsCompanion.insert(
                 id: id,
                 movieId: movieId,
-                movieTitle: movieTitle,
-                showtime: showtime,
-                seatNumbers: seatNumbers,
-                qrCode: qrCode,
+                bookingTime: bookingTime,
+                qrCodeData: qrCodeData,
+                seatIds: seatIds,
+                totalPrice: totalPrice,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

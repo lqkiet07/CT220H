@@ -46,4 +46,41 @@ final class _$ApiService extends ApiService {
     final Request $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<dynamic, dynamic>($request);
   }
+
+  @override
+  Future<Response<dynamic>> getTicketHistory() {
+    final Uri $url = Uri.parse('/api/tickets/history');
+    final Request $request = Request('GET', $url, client.baseUrl);
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> getShowtimes(String movieId) {
+    final Uri $url = Uri.parse('/api/movies/${movieId}/showtimes');
+    final Request $request = Request('GET', $url, client.baseUrl);
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> login(Map<String, dynamic> body) {
+    final Uri $url = Uri.parse('/api/auth/login');
+    final $body = body;
+    final Request $request = Request('POST', $url, client.baseUrl, body: $body);
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> register(Map<String, dynamic> body) {
+    final Uri $url = Uri.parse('/api/auth/register');
+    final $body = body;
+    final Request $request = Request('POST', $url, client.baseUrl, body: $body);
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> getUserProfile() {
+    final Uri $url = Uri.parse('/api/auth/profile');
+    final Request $request = Request('GET', $url, client.baseUrl);
+    return client.send<dynamic, dynamic>($request);
+  }
 }
