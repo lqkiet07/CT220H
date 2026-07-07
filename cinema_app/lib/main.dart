@@ -1,30 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:chopper/chopper.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
+import 'data/remote/api_service.dart';
+import 'data/remote/mock_interceptor.dart';
+import 'data/local/database.dart';
+import 'data/repositories/movie_repository_impl.dart';
+import 'presentation/providers/movie_provider.dart';
 
 void main() {
-  runApp(const CinemaApp());
+  // Khởi tạo các Core Services
+  final chopperClient = ChopperClient(
+    baseUrl: Uri.parse('http://localhost:8080/api'),
+    services: [
+      ApiService.create(),
+    ],
+    interceptors: [
+      MockInterceptor(), // Sử dụng MockInterceptor để giả lập Server
+      HttpLoggingInterceptor(),
+    ],
+    converter: const JsonConverter(),
+  );
+
+  final apiService = chopperClient.getService<ApiService>();
+  final appDatabase = AppDatabase();
+
+  // Khởi tạo Repositories
+  final movieRepository = MovieRepositoryImpl(apiService);
+
+  runApp(CinemaApp(
+    movieRepository: movieRepository,
+  ));
 }
 
 class CinemaApp extends StatelessWidget {
-  const CinemaApp({super.key});
+  final MovieRepositoryImpl movieRepository;
+
+  const CinemaApp({
+    super.key,
+    required this.movieRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // TODO: Thêm các Provider (ChangeNotifier) của Thành viên A vào đây ở Giai đoạn 2
-        // Ví dụ: ChangeNotifierProvider(create: (_) => CartProvider()),
-        
-        // Cung cấp 1 Provider tạm thời để MultiProvider không bị lỗi mảng rỗng
-        Provider<String>(create: (_) => "Init"), 
+        ChangeNotifierProvider(
+          create: (_) => MovieProvider(movieRepository)..fetchTrendingMovies(),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Cinema App CT220H',
-        theme: AppTheme.darkTheme, // Kích hoạt Dark Theme toàn cục
-        routerConfig: AppRouter.router, // Bật hệ thống điều hướng Go Router
-        debugShowCheckedModeBanner: false, // Ẩn chữ DEBUG góc phải
+        theme: AppTheme.darkTheme,
+        routerConfig: AppRouter.router,
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

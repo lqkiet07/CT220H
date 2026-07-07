@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../data/mock/mock_data.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/movie.dart';
 import '../../widgets/movie_card.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../../providers/movie_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,11 +14,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // TODO: Ở Giai đoạn 2, Thành viên A sẽ đổi dòng này thành context.watch<MovieProvider>()
-  final List<Movie> _movies = MockData.getMovies();
-
   @override
   Widget build(BuildContext context) {
+    final movieProvider = context.watch<MovieProvider>();
+    final _movies = movieProvider.trendingMovies;
     return Scaffold(
       appBar: AppBar(
         title: const Column(
@@ -58,10 +58,14 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      body: movieProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : movieProvider.error.isNotEmpty
+              ? Center(child: Text('Lỗi: ${movieProvider.error}', style: const TextStyle(color: Colors.red)))
+              : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

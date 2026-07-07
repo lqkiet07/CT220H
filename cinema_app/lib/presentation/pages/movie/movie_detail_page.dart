@@ -307,8 +307,8 @@ class MovieDetailPage extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // Điều hướng sang trang Chọn Ghế
-                context.push('/booking/${movie.id}');
+                // Điều hướng sang trang Chọn Suất chiếu thay vì Chọn Ghế
+                context.push('/showtimes/${movie.id}');
               },
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,

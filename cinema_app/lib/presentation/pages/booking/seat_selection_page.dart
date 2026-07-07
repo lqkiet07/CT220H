@@ -391,8 +391,15 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           ElevatedButton(
             onPressed: hasSelection
                 ? () {
-                    // TODO: Điều hướng sang trang Thanh Toán
-                    print('Tiến hành thanh toán cho ghế: $selectedSeatIds');
+                    // Điều hướng sang trang Thanh Toán
+                    context.push(
+                      '/checkout',
+                      extra: {
+                        'movieId': widget.movieId,
+                        'seats': selectedSeatIds.toList()..sort(),
+                        'totalPrice': totalPrice,
+                      },
+                    );
                   }
                 : null, // Disable nếu chưa chọn ghế
             style: ElevatedButton.styleFrom(
