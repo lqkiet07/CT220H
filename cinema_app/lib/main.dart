@@ -8,6 +8,7 @@ import 'data/remote/mock_interceptor.dart';
 import 'data/local/database.dart';
 import 'data/repositories/movie_repository_impl.dart';
 import 'presentation/providers/movie_provider.dart';
+import 'presentation/providers/auth_provider.dart';
 
 void main() {
   // Khởi tạo các Core Services
@@ -48,6 +49,9 @@ class CinemaApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) => MovieProvider(movieRepository)..fetchTrendingMovies(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
         ),
       ],
       child: MaterialApp.router(

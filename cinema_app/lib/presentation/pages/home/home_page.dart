@@ -5,6 +5,7 @@ import '../../widgets/movie_card.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/movie_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,21 +18,22 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final movieProvider = context.watch<MovieProvider>();
+    final authProvider = context.watch<AuthProvider>();
     final _movies = movieProvider.trendingMovies;
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '👋 Xin chào, Mọt Phim',
-              style: TextStyle(
+              authProvider.isLoggedIn ? '👋 Xin chào, ${authProvider.userName}' : '👋 Xin chào, Khách',
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.normal,
               ),
             ),
-            Text(
+            const Text(
               'CT220H Cinema',
               style: TextStyle(
                 fontWeight: FontWeight.bold, 
@@ -44,16 +46,23 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: authProvider.isLoggedIn 
+                ? CircleAvatar(
+                    radius: 14,
+                    backgroundImage: NetworkImage(authProvider.userAvatar),
+                  )
+                : const Icon(Icons.person_outline, color: Colors.white),
             onPressed: () {
-              // TODO: Tính năng tìm kiếm
+              if (authProvider.isLoggedIn) {
+                context.push('/profile');
+              } else {
+                context.push('/login');
+              }
             },
           ),
           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              // TODO: Mở trang Profile cá nhân
-            },
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
+            onPressed: () {},
           ),
           const SizedBox(width: 8),
         ],

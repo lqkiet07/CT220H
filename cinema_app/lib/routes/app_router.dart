@@ -5,6 +5,10 @@ import '../presentation/pages/movie/movie_detail_page.dart';
 import '../presentation/pages/booking/seat_selection_page.dart';
 import '../presentation/pages/booking/showtime_selection_page.dart';
 import '../presentation/pages/booking/checkout_page.dart';
+import '../presentation/pages/booking/payment_success_page.dart';
+import '../presentation/pages/auth/login_page.dart';
+import '../presentation/pages/auth/register_page.dart';
+import '../presentation/pages/profile/profile_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -44,6 +48,25 @@ class AppRouter {
           final bookingData = state.extra as Map<String, dynamic>;
           return CheckoutPage(bookingData: bookingData);
         },
+      ),
+      GoRoute(
+        path: '/success',
+        builder: (BuildContext context, GoRouterState state) {
+          final bookingData = state.extra as Map<String, dynamic>;
+          return PaymentSuccessPage(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (BuildContext context, GoRouterState state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (BuildContext context, GoRouterState state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (BuildContext context, GoRouterState state) => const ProfilePage(),
       ),
     ],
   );

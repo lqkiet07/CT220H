@@ -242,8 +242,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
             onPressed: () {
-              // TODO: Giai đoạn tiếp theo: Xử lý gọi API sinh mã QR
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chức năng đang hoàn thiện...')));
+              // Hủy đồng hồ
+              _timer?.cancel();
+              
+              // Giả lập Loading thanh toán 1.5 giây
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              );
+
+              Future.delayed(const Duration(milliseconds: 1500), () {
+                // Đóng dialog loading
+                Navigator.of(context).pop();
+                // Chuyển sang trang Success
+                context.push('/success', extra: widget.bookingData);
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
