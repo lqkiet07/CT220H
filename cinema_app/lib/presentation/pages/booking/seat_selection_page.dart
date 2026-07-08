@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../../data/models/movie.dart';
 import '../../../data/models/seat.dart';
 import '../../../data/mock/mock_data.dart';
@@ -44,13 +45,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       } else {
         // Giới hạn tối đa 8 ghế
         if (selectedSeatIds.length >= 8) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Bạn chỉ được chọn tối đa 8 ghế cho mỗi giao dịch!'),
-              backgroundColor: Colors.redAccent,
-              duration: Duration(seconds: 2),
-            ),
-          );
+          SnackbarUtils.showError(context, 'Bạn chỉ được chọn tối đa 8 ghế cho mỗi giao dịch!');
           return;
         }
         selectedSeatIds.add(seat.id);

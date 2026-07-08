@@ -10,9 +10,11 @@ import '../presentation/pages/auth/login_page.dart';
 import '../presentation/pages/auth/register_page.dart';
 import '../presentation/pages/profile/profile_page.dart';
 import '../presentation/pages/booking/my_tickets_page.dart';
+import '../presentation/pages/admin/admin_dashboard_page.dart';
+import '../presentation/pages/admin/admin_movies_page.dart';
+import '../presentation/pages/admin/admin_movie_form_page.dart';
 import '../presentation/pages/profile/account_settings_page.dart';
 import '../presentation/pages/profile/support_page.dart';
-import '../presentation/pages/admin/admin_dashboard_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -87,6 +89,21 @@ class AppRouter {
       GoRoute(
         path: '/admin_dashboard',
         builder: (BuildContext context, GoRouterState state) => const AdminDashboardPage(),
+      ),
+      GoRoute(
+        path: '/admin_movies',
+        builder: (BuildContext context, GoRouterState state) => const AdminMoviesPage(),
+      ),
+      GoRoute(
+        path: '/admin_movie_form',
+        builder: (BuildContext context, GoRouterState state) => const AdminMovieFormPage(),
+      ),
+      GoRoute(
+        path: '/admin_movie_form/:id',
+        builder: (BuildContext context, GoRouterState state) {
+          final movieId = state.pathParameters['id']!;
+          return AdminMovieFormPage(movieId: movieId);
+        },
       ),
     ],
   );

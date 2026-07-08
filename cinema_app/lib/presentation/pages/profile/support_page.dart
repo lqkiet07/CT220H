@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class SupportPage extends StatelessWidget {
   const SupportPage({super.key});
@@ -129,12 +130,7 @@ class SupportPage extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tin nhắn của bạn đã được gửi. Chúng tôi sẽ phản hồi sớm nhất!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  SnackbarUtils.showSuccess(context, 'Tin nhắn của bạn đã được gửi. Chúng tôi sẽ phản hồi sớm nhất!');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.surface,

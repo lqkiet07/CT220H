@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -391,27 +392,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     context.pop(); // Đóng Bottom Sheet
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: const [
-                            Icon(Icons.mark_email_read_rounded, color: Colors.white),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Đã gửi liên kết! Vui lòng kiểm tra hộp thư email.',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: Colors.green.shade600,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-                        elevation: 8,
-                      ),
-                    );
+                    SnackbarUtils.showSuccess(context, 'Đã gửi liên kết! Vui lòng kiểm tra hộp thư email.');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

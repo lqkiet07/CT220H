@@ -30,4 +30,37 @@ class MovieProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> addMovie(Movie movie) async {
+    try {
+      await _movieRepository.addMovie(movie);
+      await fetchTrendingMovies(); // Refresh list
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateMovie(Movie movie) async {
+    try {
+      await _movieRepository.updateMovie(movie);
+      await fetchTrendingMovies(); // Refresh list
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteMovie(String id) async {
+    try {
+      await _movieRepository.deleteMovie(id);
+      await fetchTrendingMovies(); // Refresh list
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
 }

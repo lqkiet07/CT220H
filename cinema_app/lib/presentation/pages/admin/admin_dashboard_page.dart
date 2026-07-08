@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../providers/auth_provider.dart';
 
 class AdminDashboardPage extends StatelessWidget {
@@ -120,10 +121,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.movie_creation_rounded,
                     color: Colors.blueAccent,
                     onTap: () {
-                      // context.push('/admin_movies');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng Quản lý Phim sắp ra mắt!')),
-                      );
+                      context.push('/admin_movies');
                     },
                   ),
                   _buildAdminMenuCard(
@@ -132,9 +130,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.access_time_filled_rounded,
                     color: Colors.orangeAccent,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng Suất Chiếu đang phát triển!')),
-                      );
+                      SnackbarUtils.showInfo(context, 'Tính năng Suất Chiếu đang phát triển!');
                     },
                   ),
                   _buildAdminMenuCard(
@@ -143,9 +139,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.qr_code_scanner_rounded,
                     color: Colors.greenAccent.shade700,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Chức năng Soát Vé bằng Camera sắp ra mắt!')),
-                      );
+                      SnackbarUtils.showInfo(context, 'Chức năng Soát Vé bằng Camera sắp ra mắt!');
                     },
                   ),
                   _buildAdminMenuCard(
@@ -154,9 +148,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.people_alt_rounded,
                     color: Colors.purpleAccent,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng Quản lý Khách Hàng đang phát triển!')),
-                      );
+                      SnackbarUtils.showInfo(context, 'Tính năng Quản lý Khách Hàng đang phát triển!');
                     },
                   ),
                 ],
@@ -166,6 +158,7 @@ class AdminDashboardPage extends StatelessWidget {
               // Logout Button
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: OutlinedButton.icon(
                   onPressed: () {
                     authProvider.logout();
@@ -181,8 +174,7 @@ class AdminDashboardPage extends StatelessWidget {
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Colors.redAccent),
+                    side: const BorderSide(color: Colors.redAccent, width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

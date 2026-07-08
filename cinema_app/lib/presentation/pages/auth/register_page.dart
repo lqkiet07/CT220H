@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -38,28 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
       
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: const [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text(
-                  'Đăng ký thành công! Hãy đăng nhập.',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-            elevation: 8,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        SnackbarUtils.showSuccess(context, 'Đăng ký thành công! Hãy đăng nhập.');
         context.pop(); // Quay lại trang Login
       }
     }

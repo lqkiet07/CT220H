@@ -40,4 +40,25 @@ class MovieRepositoryImpl implements MovieRepository {
       throw Exception('Lỗi kết nối mạng: $e');
     }
   }
+
+  @override
+  Future<void> addMovie(Movie movie) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    MockData.addMovie(movie);
+  }
+
+  @override
+  Future<void> updateMovie(Movie movie) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    MockData.updateMovie(movie);
+  }
+
+  @override
+  Future<void> deleteMovie(String id) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    MockData.deleteMovie(id);
+  }
 }

@@ -6,27 +6,47 @@ import '../models/review.dart';
 import '../models/user.dart';
 
 class MockData {
+  static final List<Movie> _movies = [
+    const Movie(
+      id: 'm1',
+      title: 'Lật Mặt 7: Một Điều Ước',
+      posterUrl: 'https://i.imgur.com/mnOlHB0.jpg',
+      rating: 8.5,
+      durationMinutes: 120,
+      basePrice: 90000,
+      genres: ['Drama', 'Family'],
+    ),
+    const Movie(
+      id: 'm2',
+      title: 'Mai',
+      posterUrl: 'https://cdn-images.vtv.vn/562122370168008704/2023/11/28/photo-1-17011453442011344132442.jpg',
+      rating: 7.9,
+      durationMinutes: 130,
+      basePrice: 100000,
+      genres: ['Romance', 'Drama'],
+    ),
+  ];
+
   static List<Movie> getMovies() {
-    return const [
-      Movie(
-        id: 'm1',
-        title: 'Lật Mặt 7: Một Điều Ước',
-        posterUrl: 'https://i.imgur.com/mnOlHB0.jpg',
-        rating: 8.5,
-        durationMinutes: 120,
-        basePrice: 90000,
-        genres: ['Drama', 'Family'], // Thêm genres
-      ),
-      Movie(
-        id: 'm2',
-        title: 'Mai',
-        posterUrl: 'https://cdn-images.vtv.vn/562122370168008704/2023/11/28/photo-1-17011453442011344132442.jpg',
-        rating: 7.9,
-        durationMinutes: 130,
-        basePrice: 100000,
-        genres: ['Romance', 'Drama'], // Thêm genres
-      ),
-    ];
+    return _movies.toList(); // Return a copy to avoid direct modification outside CRUD methods
+  }
+
+  // Add new movie
+  static void addMovie(Movie movie) {
+    _movies.add(movie);
+  }
+
+  // Update existing movie
+  static void updateMovie(Movie movie) {
+    final index = _movies.indexWhere((m) => m.id == movie.id);
+    if (index != -1) {
+      _movies[index] = movie;
+    }
+  }
+
+  // Delete movie by ID
+  static void deleteMovie(String id) {
+    _movies.removeWhere((m) => m.id == id);
   }
 
   static List<Room> getRooms() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({super.key});
@@ -27,12 +28,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
       // Call API to update user info here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã lưu thay đổi thành công!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      SnackbarUtils.showSuccess(context, 'Đã lưu thay đổi thành công!');
       context.pop();
     }
   }
