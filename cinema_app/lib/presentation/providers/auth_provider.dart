@@ -6,30 +6,43 @@ class AuthProvider extends ChangeNotifier {
   String _userAvatar = '';
   String _userEmail = '';
 
+  bool _isAdmin = false;
+
   bool get isLoggedIn => _isLoggedIn;
   String get userName => _userName;
   String get userAvatar => _userAvatar;
   String get userEmail => _userEmail;
+  bool get isAdmin => _isAdmin;
 
-  // Giả lập Đăng nhập
+  // Mock login method
   Future<void> login(String email, String password) async {
-    // Đợi 1 chút giả lập mạng (1.5s)
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 1500));
     
-    // Gán dữ liệu ảo
+    // Assign mock data
     _isLoggedIn = true;
     _userEmail = email;
-    // Bóc tách tên từ Email (VD: kiemthe@gmail.com -> Tên: Kiemthe)
-    _userName = email.split('@')[0];
-    _userName = _userName[0].toUpperCase() + _userName.substring(1); 
-    _userAvatar = 'https://i.pravatar.cc/150?u=$email'; // Avatar ngẫu nhiên theo email
+    
+    // Admin authentication check
+    if (email == 'admin@gmail.com' && password == 'admin123') {
+      _isAdmin = true;
+      _userName = 'Quản trị viên';
+      _userAvatar = 'https://ui-avatars.com/api/?name=Admin&background=B00710&color=fff';
+    } else {
+      _isAdmin = false;
+      // Extract name from email (e.g., kiemthe@gmail.com -> Kiemthe)
+      _userName = email.split('@')[0];
+      _userName = _userName[0].toUpperCase() + _userName.substring(1); 
+      _userAvatar = 'https://i.pravatar.cc/150?u=$email'; // Random avatar based on email
+    }
 
     notifyListeners();
   }
 
-  // Đăng xuất
+  // Logout user and clear data
   void logout() {
     _isLoggedIn = false;
+    _isAdmin = false;
     _userName = '';
     _userAvatar = '';
     _userEmail = '';

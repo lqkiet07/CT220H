@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       
-      // Gọi AuthProvider
+      // Call AuthProvider to authenticate
       final authProvider = context.read<AuthProvider>();
       await authProvider.login(
         _emailController.text.trim(), 
@@ -38,8 +38,12 @@ class _LoginPageState extends State<LoginPage> {
       
       if (mounted) {
         setState(() => _isLoading = false);
-        // Đăng nhập xong quay về Trang Chủ (để thấy Avatar đổi)
-        context.go('/');
+        // Route to Admin Dashboard or Customer Home after login
+        if (authProvider.isAdmin) {
+          context.go('/admin_dashboard');
+        } else {
+          context.go('/');
+        }
       }
     }
   }

@@ -132,28 +132,27 @@ class ProfilePage extends StatelessWidget {
                 icon: Icons.confirmation_number_outlined,
                 title: 'Vé của tôi',
                 subtitle: 'Lịch sử mua vé và vé sắp tới',
-                onTap: () {},
-              ),
-              const SizedBox(height: 16),
-              _buildMenuOption(
-                icon: Icons.favorite_border_rounded,
-                title: 'Phim yêu thích',
-                subtitle: 'Danh sách phim bạn đã lưu',
-                onTap: () {},
+                onTap: () {
+                  context.push('/my_tickets');
+                },
               ),
               const SizedBox(height: 16),
               _buildMenuOption(
                 icon: Icons.settings_outlined,
                 title: 'Cài đặt tài khoản',
                 subtitle: 'Đổi mật khẩu, thông tin cá nhân',
-                onTap: () {},
+                onTap: () {
+                  context.push('/account_settings');
+                },
               ),
               const SizedBox(height: 16),
               _buildMenuOption(
                 icon: Icons.headset_mic_outlined,
                 title: 'Hỗ trợ khách hàng',
                 subtitle: 'Liên hệ 24/7',
-                onTap: () {},
+                onTap: () {
+                  context.push('/support');
+                },
               ),
               const SizedBox(height: 32),
 

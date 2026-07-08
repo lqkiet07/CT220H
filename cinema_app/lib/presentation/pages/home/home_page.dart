@@ -177,13 +177,30 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
         backgroundColor: AppColors.background,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 1) {
+            // Chuyển hướng sang trang Vé Của Tôi
+            if (authProvider.isLoggedIn) {
+              context.push('/my_tickets');
+            } else {
+              context.push('/login');
+            }
+          } else if (index == 2) {
+            // Chuyển hướng sang Cá nhân / Đăng nhập
+            if (authProvider.isLoggedIn) {
+              context.push('/profile');
+            } else {
+              context.push('/login');
+            }
+          }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.theaters), label: 'Rạp chiếu'),
           BottomNavigationBarItem(icon: Icon(Icons.confirmation_num), label: 'Vé của tôi'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
         ],

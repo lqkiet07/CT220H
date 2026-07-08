@@ -9,6 +9,10 @@ import '../presentation/pages/booking/payment_success_page.dart';
 import '../presentation/pages/auth/login_page.dart';
 import '../presentation/pages/auth/register_page.dart';
 import '../presentation/pages/profile/profile_page.dart';
+import '../presentation/pages/booking/my_tickets_page.dart';
+import '../presentation/pages/profile/account_settings_page.dart';
+import '../presentation/pages/profile/support_page.dart';
+import '../presentation/pages/admin/admin_dashboard_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -67,6 +71,22 @@ class AppRouter {
       GoRoute(
         path: '/profile',
         builder: (BuildContext context, GoRouterState state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: '/my_tickets',
+        builder: (BuildContext context, GoRouterState state) => const MyTicketsPage(),
+      ),
+      GoRoute(
+        path: '/account_settings',
+        builder: (BuildContext context, GoRouterState state) => const AccountSettingsPage(),
+      ),
+      GoRoute(
+        path: '/support',
+        builder: (BuildContext context, GoRouterState state) => const SupportPage(),
+      ),
+      GoRoute(
+        path: '/admin_dashboard',
+        builder: (BuildContext context, GoRouterState state) => const AdminDashboardPage(),
       ),
     ],
   );
