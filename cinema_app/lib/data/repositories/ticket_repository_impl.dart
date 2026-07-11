@@ -1,81 +1,78 @@
-import 'package:drift/drift.dart' as drift;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/repositories/ticket_repository.dart';
-import '../models/ticket.dart' as model;
-import '../remote/api_service.dart';
-import '../local/database.dart';
+import '../models/ticket.dart';
 
 class TicketRepositoryImpl implements TicketRepository {
-  final ApiService _apiService;
-  final AppDatabase _appDatabase;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  TicketRepositoryImpl(this._apiService, this._appDatabase);
+  TicketRepositoryImpl();
 
+  // Đã sửa tham số thành Map<String, dynamic> theo đúng Interface
   @override
   Future<bool> bookTicket(Map<String, dynamic> ticketData) async {
     try {
-      final response = await _apiService.bookTicket(ticketData);
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) throw Exception('Bạn cần đăng nhập để đặt vé!');
 
-      if (response.isSuccessful) {
-        final savedData = response.body;
+      final showtimeId = ticketData['showtimeId'] as String;
+      final selectedSeats = List<String>.from(ticketData['seats'] ?? []);
+      final totalPrice = ticketData['totalPrice'] as double;
 
-        // Xử lý biến đổi List<String> từ API thành chuỗi String để lưu vào SQLite
-        String seatIdsString = '';
-        if (savedData['seatIds'] is List) {
-          seatIdsString = (savedData['seatIds'] as List).map((e) => e.toString()).join(',');
-        } else {
-          seatIdsString = savedData['seatIds']?.toString() ?? '';
+      await _firestore.runTransaction((transaction) async {
+        final showtimeRef = _firestore.collection('showtimes').doc(showtimeId);
+        final showtimeSnapshot = await transaction.get(showtimeRef);
+
+        if (!showtimeSnapshot.exists) throw Exception('Suất chiếu không tồn tại!');
+
+        final List<dynamic> currentBookedSeats = showtimeSnapshot.data()?['bookedSeats'] ?? [];
+        for (var seat in selectedSeats) {
+          if (currentBookedSeats.contains(seat)) {
+            throw Exception('Ghế $seat đã có người đặt!');
+          }
         }
 
-        // Lưu vào SQLite
-        await _appDatabase.insertTicket(
-            TicketsCompanion.insert(
-              movieId: savedData['movieId']?.toString() ?? '',
-              bookingTime: savedData['bookingTime']?.toString() ?? DateTime.now().toIso8601String(),
-              qrCodeData: savedData['qrCodeData']?.toString() ?? '',
-              seatIds: seatIdsString, // Lưu dạng chuỗi ngăn cách bằng dấu phẩy
-              totalPrice: (savedData['totalPrice'] as num?)?.toDouble() ?? 0.0,
-            )
-        );
-        return true;
-      }
-      return false;
+        currentBookedSeats.addAll(selectedSeats);
+        transaction.update(showtimeRef, {'bookedSeats': currentBookedSeats});
+
+        final ticketRef = _firestore.collection('tickets').doc();
+        transaction.set(ticketRef, {
+          'ticketId': ticketRef.id,
+          'uid': uid,
+          'showtimeId': showtimeId,
+          'seats': selectedSeats,
+          'totalPrice': totalPrice,
+          'bookingTime': FieldValue.serverTimestamp(),
+        });
+      });
+
+      return true;
     } catch (e) {
-      throw Exception('Lỗi quá trình đặt vé: $e');
+      throw Exception('Đặt vé thất bại: $e');
     }
   }
 
+  // Đã đổi tên hàm thành getTicketHistory
   @override
-  Future<List<model.Ticket>> getTicketHistory() async {
+  Future<List<Ticket>> getTicketHistory() async {
     try {
-      final response = await _apiService.getTicketHistory();
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) throw Exception('Chưa đăng nhập');
 
-      if (response.isSuccessful) {
-        final List data = response.body;
-        return data.map((json) => model.Ticket.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      // Khi mất mạng, lấy từ SQLite lên và ÉP KIỂU cho đúng format Model yêu cầu
-      final localTickets = await _appDatabase.getAllTickets();
+      final snapshot = await _firestore
+          .collection('tickets')
+          .where('uid', isEqualTo: uid)
+          .orderBy('bookingTime', descending: true)
+          .get();
 
-      return localTickets.map((dbTicket) {
-        // 1. Ép kiểu String -> DateTime
-        final parsedDate = DateTime.tryParse(dbTicket.bookingTime) ?? DateTime.now();
-
-        // 2. Ép kiểu String -> List<String> bằng cách cắt theo dấu phẩy ","
-        final parsedSeatIds = dbTicket.seatIds.isEmpty
-            ? <String>[]
-            : dbTicket.seatIds.split(',');
-
-        return model.Ticket(
-          id: dbTicket.id.toString(),
-          movieId: dbTicket.movieId,
-          bookingTime: parsedDate,       // Đã sửa thành DateTime thành công!
-          qrCodeData: dbTicket.qrCodeData,
-          seatIds: parsedSeatIds,         // Đã sửa thành List<String> thành công!
-          totalPrice: dbTicket.totalPrice,
-        );
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return Ticket.fromJson(data);
       }).toList();
+    } catch (e) {
+      throw Exception('Lỗi tải lịch sử đặt vé: $e');
     }
   }
 }

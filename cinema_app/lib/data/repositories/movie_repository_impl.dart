@@ -1,64 +1,110 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/movie_repository.dart';
-import '../models/movie.dart';
-import '../remote/api_service.dart';
-import '../mock/mock_data.dart';
+import '../models/movie.dart'; // Đảm bảo import đúng model Movie của bạn
 
 class MovieRepositoryImpl implements MovieRepository {
-    final ApiService _apiService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  MovieRepositoryImpl(this._apiService);
+  MovieRepositoryImpl(); // Xóa ApiService trong constructor cũ nếu có
 
   @override
   Future<List<Movie>> getTrendingMovies() async {
     try {
-      // Giả lập độ trễ mạng
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Lấy trực tiếp từ MockData thay vì qua API Chopper để tránh lỗi parser
-      return MockData.getMovies();
+      // Lấy các phim có đánh dấu là trending (hoặc lấy đại 5 phim mới nhất)
+      final snapshot = await _firestore
+          .collection('movies')
+          .orderBy('rating', descending: true) // Sắp xếp theo điểm đánh giá giảm dần
+          .limit(5)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Gán ID của document làm ID của Model
+        return Movie.fromJson(data);
+      }).toList();
     } catch (e) {
-      throw Exception('Lỗi kết nối mạng: $e');
+      throw Exception('Lỗi lấy danh sách phim hot: $e');
     }
   }
 
   @override
-  Future<Movie> getMovieDetail(String id) async {
+  Future<List<Movie>> getNowPlayingMovies() async {
     try {
-      // 1. Gọi API lấy chi tiết 1 bộ phim theo ID
-      final response = await _apiService.getMovieDetail(id);
+      // Tìm các phim có trạng thái 'now_playing' trên Firestore
+      final snapshot = await _firestore
+          .collection('movies')
+          .where('status', isEqualTo: 'now_playing')
+          .get();
 
-      // 2. Kiểm tra thành công
-      if (response.isSuccessful) {
-        final data = response.body;
-
-        // Chuyển đổi JSON thành đối tượng Movie
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
         return Movie.fromJson(data);
-      } else {
-        throw Exception('Lỗi Server: Không tìm thấy phim. Mã lỗi: ${response.statusCode}');
-      }
+      }).toList();
     } catch (e) {
-      throw Exception('Lỗi kết nối mạng: $e');
+      throw Exception('Lỗi lấy danh sách phim đang chiếu: $e');
+    }
+  }
+
+  @override
+  Future<List<Movie>> getComingSoonMovies() async {
+    try {
+      // Tìm các phim có trạng thái 'coming_soon' trên Firestore
+      final snapshot = await _firestore
+          .collection('movies')
+          .where('status', isEqualTo: 'coming_soon')
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return Movie.fromJson(data);
+      }).toList();
+    } catch (e) {
+      throw Exception('Lỗi lấy danh sách phim sắp chiếu: $e');
+    }
+  }
+  @override
+  Future<Movie> getMovieDetail(String movieId) async {
+    try {
+      final doc = await _firestore.collection('movies').doc(movieId).get();
+      if (!doc.exists || doc.data() == null) throw Exception('Không tìm thấy phim');
+
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      return Movie.fromJson(data);
+    } catch (e) {
+      throw Exception('Lỗi lấy chi tiết phim: $e');
     }
   }
 
   @override
   Future<void> addMovie(Movie movie) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    MockData.addMovie(movie);
+    try {
+      // Ép kiểu object Movie thành Map (JSON) để lưu lên Firebase
+      await _firestore.collection('movies').add(movie.toJson());
+    } catch (e) {
+      throw Exception('Lỗi thêm phim mới: $e');
+    }
   }
 
   @override
   Future<void> updateMovie(Movie movie) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    MockData.updateMovie(movie);
+    try {
+      // Cập nhật dựa trên ID của phim
+      await _firestore.collection('movies').doc(movie.id).update(movie.toJson());
+    } catch (e) {
+      throw Exception('Lỗi cập nhật phim: $e');
+    }
   }
 
   @override
-  Future<void> deleteMovie(String id) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    MockData.deleteMovie(id);
+  Future<bool> deleteMovie(String movieId) async {
+    try {
+      await _firestore.collection('movies').doc(movieId).delete();
+      return true;
+    } catch (e) {
+      throw Exception('Lỗi xóa phim: $e');
+    }
   }
 }

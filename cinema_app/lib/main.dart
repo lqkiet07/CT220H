@@ -1,34 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chopper/chopper.dart';
+
+// Import Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Core & Routes
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
-import 'data/remote/api_service.dart';
-import 'data/remote/mock_interceptor.dart';
-import 'data/local/database.dart';
+
+// Repositories & Providers
 import 'data/repositories/movie_repository_impl.dart';
 import 'presentation/providers/movie_provider.dart';
 import 'presentation/providers/auth_provider.dart';
 
-void main() {
-  // Khởi tạo các Core Services
-  final chopperClient = ChopperClient(
-    baseUrl: Uri.parse('http://localhost:8080/api'),
-    services: [
-      ApiService.create(),
-    ],
-    interceptors: [
-      MockInterceptor(), // Sử dụng MockInterceptor để giả lập Server
-      HttpLoggingInterceptor(),
-    ],
-    converter: const JsonConverter(),
+void main() async {
+  // 1. Đảm bảo Flutter Core được khởi tạo trước khi gọi Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Khởi tạo Firebase với cấu hình tự động sinh ra từ lệnh CLI
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  final apiService = chopperClient.getService<ApiService>();
-  final appDatabase = AppDatabase();
-
-  // Khởi tạo Repositories
-  final movieRepository = MovieRepositoryImpl(apiService);
+  // 3. Khởi tạo Repository (Lưu ý: Không còn truyền apiService vào đây nữa)
+  final movieRepository = MovieRepositoryImpl();
 
   runApp(CinemaApp(
     movieRepository: movieRepository,
