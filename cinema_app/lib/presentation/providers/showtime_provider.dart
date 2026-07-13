@@ -6,7 +6,9 @@ import '../../data/models/seat.dart';
 class ShowtimeProvider with ChangeNotifier {
   final ShowtimeRepository _repository;
 
-  ShowtimeProvider(this._repository);
+  ShowtimeProvider(this._repository) {
+    loadAllShowtimes();
+  }
 
   // ── State ──────────────────────────────────────────────────────
   List<Showtime> _showtimes = [];
@@ -22,6 +24,22 @@ class ShowtimeProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   // ── READ ───────────────────────────────────────────────────────
+
+  Future<void> loadAllShowtimes() async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      _showtimes = await _repository.getAllShowtimes();
+      _showtimes.sort((a, b) => a.startTime.compareTo(b.startTime));
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   /// Lấy lịch chiếu theo phim
   Future<void> fetchShowtimes(String movieId) async {
@@ -60,13 +78,14 @@ class ShowtimeProvider with ChangeNotifier {
   /// Thêm suất chiếu mới lên Firestore và refresh list
   Future<void> addShowtime(Showtime showtime) async {
     try {
+      _isLoading = true;
+      notifyListeners();
+
       await _repository.addShowtime(showtime);
-      // Refresh list nếu đang xem cùng movieId
-      if (_showtimes.isNotEmpty && _showtimes.first.movieId == showtime.movieId) {
-        await fetchShowtimes(showtime.movieId);
-      }
+      await loadAllShowtimes();
     } catch (e) {
       _errorMessage = e.toString();
+      _isLoading = false;
       notifyListeners();
       rethrow;
     }
@@ -75,26 +94,30 @@ class ShowtimeProvider with ChangeNotifier {
   /// Cập nhật thông tin suất chiếu và refresh list
   Future<void> updateShowtime(Showtime showtime) async {
     try {
+      _isLoading = true;
+      notifyListeners();
+
       await _repository.updateShowtime(showtime);
-      if (_showtimes.isNotEmpty && _showtimes.first.movieId == showtime.movieId) {
-        await fetchShowtimes(showtime.movieId);
-      }
+      await loadAllShowtimes();
     } catch (e) {
       _errorMessage = e.toString();
+      _isLoading = false;
       notifyListeners();
       rethrow;
     }
   }
 
-  /// Xóa suất chiếu và cập nhật list cục bộ ngay lập tức
+  /// Xóa suất chiếu và cập nhật list
   Future<void> deleteShowtime(String showtimeId) async {
     try {
-      await _repository.deleteShowtime(showtimeId);
-      // Cập nhật UI ngay mà không cần reload từ server
-      _showtimes = _showtimes.where((s) => s.id != showtimeId).toList();
+      _isLoading = true;
       notifyListeners();
+
+      await _repository.deleteShowtime(showtimeId);
+      await loadAllShowtimes();
     } catch (e) {
       _errorMessage = e.toString();
+      _isLoading = false;
       notifyListeners();
       rethrow;
     }

@@ -24,8 +24,9 @@ import 'data/repositories/ticket_repository_impl.dart';
 // --- IMPORTS PROVIDERS ---
 import 'presentation/providers/movie_provider.dart';
 import 'presentation/providers/auth_provider.dart';
-import 'presentation/providers/showtime_provider.dart'; // <-- Mới thêm
-import 'presentation/providers/ticket_provider.dart';   // <-- Mới thêm
+import 'presentation/providers/showtime_provider.dart';
+import 'presentation/providers/ticket_provider.dart';
+import 'presentation/providers/booking_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +49,7 @@ void main() async {
   ));
 }
 
-class CinemaApp extends StatelessWidget {
+class CinemaApp extends StatefulWidget {
   final MovieRepository movieRepository;
   final UserRepository userRepository;
   final ShowtimeRepository showtimeRepository;
@@ -63,35 +64,51 @@ class CinemaApp extends StatelessWidget {
   });
 
   @override
+  State<CinemaApp> createState() => _CinemaAppState();
+}
+
+class _CinemaAppState extends State<CinemaApp> {
+  late final AuthProvider authProvider;
+  late final AppRouter appRouter;
+
+  @override
+  void initState() {
+    super.initState();
+    authProvider = AuthProvider(widget.userRepository);
+    appRouter = AppRouter(authProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // 1. Tiêm Repositories
-        Provider<MovieRepository>.value(value: movieRepository),
-        Provider<UserRepository>.value(value: userRepository),
-        Provider<ShowtimeRepository>.value(value: showtimeRepository),
-        Provider<TicketRepository>.value(value: ticketRepository),
+        Provider<MovieRepository>.value(value: widget.movieRepository),
+        Provider<UserRepository>.value(value: widget.userRepository),
+        Provider<ShowtimeRepository>.value(value: widget.showtimeRepository),
+        Provider<TicketRepository>.value(value: widget.ticketRepository),
 
         // 2. Khởi tạo State Providers
         ChangeNotifierProvider(
-          create: (_) => MovieProvider(movieRepository)..fetchTrendingMovies(),
+          create: (_) => MovieProvider(widget.movieRepository)..fetchTrendingMovies(),
+        ),
+        ChangeNotifierProvider.value(
+          value: authProvider,
         ),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(userRepository),
-        ),
-
-        // --- 2 PROVIDER MỚI ĐÃ ĐƯỢC THÊM VÀO ---
-        ChangeNotifierProvider(
-          create: (_) => ShowtimeProvider(showtimeRepository),
+          create: (_) => ShowtimeProvider(widget.showtimeRepository),
         ),
         ChangeNotifierProvider(
-          create: (_) => TicketProvider(ticketRepository),
+          create: (_) => TicketProvider(widget.ticketRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => BookingProvider(),
         ),
       ],
       child: MaterialApp.router(
         title: 'Cinema App CT220H',
         theme: AppTheme.darkTheme,
-        routerConfig: AppRouter.router,
+        routerConfig: appRouter.router,
         debugShowCheckedModeBanner: false,
       ),
     );

@@ -56,56 +56,74 @@ class MockData {
     ];
   }
 
-  static List<Showtime> getShowtimes() {
-    return [
-      // Phim m1 (Lật Mặt 7) ở rạp r1 (Phòng 1)
-      Showtime(
-        id: 's1',
-        movieId: 'm1',
-        roomId: 'r1',
-        startTime: DateTime.now().copyWith(hour: 9, minute: 30),
-        dynamicPricingFactor: 1.0, 
-      ),
-      Showtime(
-        id: 's2',
-        movieId: 'm1',
-        roomId: 'r1',
-        startTime: DateTime.now().copyWith(hour: 14, minute: 00),
-        dynamicPricingFactor: 1.0, 
-      ),
-      Showtime(
-        id: 's3',
-        movieId: 'm1',
-        roomId: 'r1',
-        startTime: DateTime.now().copyWith(hour: 19, minute: 30),
-        dynamicPricingFactor: 1.2, // Giờ cao điểm
-      ),
-      
-      // Phim m1 (Lật Mặt 7) ở rạp r2 (Phòng IMAX)
-      Showtime(
-        id: 's4',
-        movieId: 'm1',
-        roomId: 'r2',
-        startTime: DateTime.now().copyWith(hour: 10, minute: 15),
-        dynamicPricingFactor: 1.5, // Phụ thu IMAX
-      ),
-      Showtime(
-        id: 's5',
-        movieId: 'm1',
-        roomId: 'r2',
-        startTime: DateTime.now().copyWith(hour: 21, minute: 00),
-        dynamicPricingFactor: 1.5, 
-      ),
+  static final List<Showtime> _showtimes = [
+    // Phim m1 (Lật Mặt 7) ở rạp r1 (Phòng 1)
+    Showtime(
+      id: 's1',
+      movieId: 'm1',
+      roomId: 'r1',
+      startTime: DateTime.now().copyWith(hour: 9, minute: 30),
+      dynamicPricingFactor: 1.0, 
+    ),
+    Showtime(
+      id: 's2',
+      movieId: 'm1',
+      roomId: 'r1',
+      startTime: DateTime.now().copyWith(hour: 14, minute: 00),
+      dynamicPricingFactor: 1.0, 
+    ),
+    Showtime(
+      id: 's3',
+      movieId: 'm1',
+      roomId: 'r1',
+      startTime: DateTime.now().copyWith(hour: 19, minute: 30),
+      dynamicPricingFactor: 1.2, // Giờ cao điểm
+    ),
+    
+    // Phim m1 (Lật Mặt 7) ở rạp r2 (Phòng IMAX)
+    Showtime(
+      id: 's4',
+      movieId: 'm1',
+      roomId: 'r2',
+      startTime: DateTime.now().copyWith(hour: 10, minute: 15),
+      dynamicPricingFactor: 1.5, // Phụ thu IMAX
+    ),
+    Showtime(
+      id: 's5',
+      movieId: 'm1',
+      roomId: 'r2',
+      startTime: DateTime.now().copyWith(hour: 21, minute: 00),
+      dynamicPricingFactor: 1.5, 
+    ),
 
-      // Phim m2 (Mai)
-      Showtime(
-        id: 's6',
-        movieId: 'm2',
-        roomId: 'r2',
-        startTime: DateTime.now().copyWith(hour: 18, minute: 30),
-        dynamicPricingFactor: 1.2, 
-      ),
-    ];
+    // Phim m2 (Mai)
+    Showtime(
+      id: 's6',
+      movieId: 'm2',
+      roomId: 'r2',
+      startTime: DateTime.now().copyWith(hour: 18, minute: 30),
+      dynamicPricingFactor: 1.2, 
+    ),
+  ];
+
+  static List<Showtime> getShowtimes() {
+    return _showtimes.toList();
+  }
+
+  static void addShowtime(Showtime showtime) {
+    _showtimes.add(showtime);
+  }
+
+  static void updateShowtime(Showtime showtime) {
+    final index = _showtimes.indexWhere((s) => s.id == showtime.id);
+    if (index != -1) {
+      _showtimes[index] = showtime;
+    }
+  }
+
+  static void deleteShowtime(String id) {
+    _showtimes.removeWhere((s) => s.id == id);
+    // Có thể cân nhắc xoá luôn vé của showtime này (nếu cần mô phỏng thật)
   }
 
   static List<Seat> getSeats() {

@@ -34,7 +34,6 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
       final doc =
           await _firestore.collection('showtimes').doc(showtimeId).get();
       if (doc.exists && doc.data() != null) {
-        // FIX (từ Bước 1): Tạo bản copy List để tránh Unmodifiable error
         final List<dynamic> bookedSeats =
             List<dynamic>.from(doc.data()!['bookedSeats'] ?? []);
 
@@ -53,16 +52,29 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     }
   }
 
+  @override
+  Future<List<Showtime>> getAllShowtimes() async {
+    try {
+      final snapshot = await _firestore.collection('showtimes').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return Showtime.fromJson(data);
+      }).toList();
+    } catch (e) {
+      throw Exception('Lỗi tải tất cả lịch chiếu: $e');
+    }
+  }
+
   // ── ADMIN CRUD ────────────────────────────────────────────────
 
   @override
   Future<void> addShowtime(Showtime showtime) async {
     try {
-      // Lưu Timestamp thay vì String ISO để nhất quán với Firestore
       final data = showtime.toJson();
       data['startTime'] = Timestamp.fromDate(showtime.startTime);
-      // Khởi tạo mảng ghế đã đặt rỗng khi tạo suất chiếu mới
       data['bookedSeats'] = [];
+      data.remove('id');
       await _firestore.collection('showtimes').add(data);
     } catch (e) {
       throw Exception('Lỗi thêm suất chiếu: $e');

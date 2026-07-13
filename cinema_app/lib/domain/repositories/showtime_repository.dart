@@ -4,6 +4,7 @@ import '../../data/models/seat.dart';
 abstract class ShowtimeRepository {
   // ── READ ──────────────────────────────────────────────────────
   Future<List<Showtime>> getShowtimesByMovie(String movieId);
+  Future<List<Showtime>> getAllShowtimes();
   Future<List<Seat>> getSeatsByShowtime(String showtimeId);
 
   // ── ADMIN CRUD ────────────────────────────────────────────────
