@@ -13,6 +13,7 @@ import 'routes/app_router.dart';
 import 'data/repositories/movie_repository_impl.dart';
 import 'presentation/providers/movie_provider.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'domain/repositories/movie_repository.dart';
 
 void main() async {
   // 1. Đảm bảo Flutter Core được khởi tạo trước khi gọi Firebase
@@ -32,7 +33,7 @@ void main() async {
 }
 
 class CinemaApp extends StatelessWidget {
-  final MovieRepositoryImpl movieRepository;
+  final MovieRepository movieRepository;
 
   const CinemaApp({
     super.key,

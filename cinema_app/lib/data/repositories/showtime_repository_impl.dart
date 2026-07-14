@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/showtime_repository.dart';
 import '../models/showtime.dart'; // Import đúng model Showtime của bạn
-
+import '../models/seat.dart';
 class ShowtimeRepositoryImpl implements ShowtimeRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -35,11 +35,22 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
       if (doc.exists && doc.data() != null) {
         final List<dynamic> bookedSeats = doc.data()!['bookedSeats'] ?? [];
 
-        // Biến đổi từng chuỗi (VD: "A1") thành đối tượng Seat tương ứng
         return bookedSeats.map((seatStr) {
+          final String currentSeat = seatStr.toString(); // VD: "A5" hoặc "H12"
+
+          // 1. Tách lấy chữ cái đầu làm Hàng (VD: "A5" -> row = "A")
+          final String row = currentSeat.isNotEmpty ? currentSeat[0] : '';
+
+          // 2. Tách lấy phần số phía sau làm Số ghế (VD: "A5" -> number = 5)
+          // Dùng int.tryParse để ép kiểu an toàn, nếu lỗi thì mặc định là 0
+          final int number = currentSeat.length > 1
+              ? (int.tryParse(currentSeat.substring(1)) ?? 0)
+              : 0;
+
           return Seat(
-            id: seatStr.toString(), // Thay 'id' bằng tên biến đúng trong Model Seat của bạn
-            // isBooked: true, // Nếu model Seat của bạn có biến đánh dấu đã đặt
+            id: currentSeat,
+            row: row,
+            number: number, // Đã truyền vào biến kiểu int, hết lỗi Type!
           );
         }).toList();
       }
