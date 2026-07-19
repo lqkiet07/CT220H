@@ -18,7 +18,8 @@ class TicketRepositoryImpl implements TicketRepository {
 
       final showtimeId = ticketData['showtimeId'] as String;
       final selectedSeats = List<String>.from(ticketData['seats'] ?? []);
-      final totalPrice = ticketData['totalPrice'] as double;
+      // FIX: Firestore có thể trả về num (int hoặc double) → dùng (as num).toDouble()
+      final totalPrice = (ticketData['totalPrice'] as num).toDouble();
 
       await _firestore.runTransaction((transaction) async {
         final showtimeRef = _firestore.collection('showtimes').doc(showtimeId);
@@ -26,7 +27,10 @@ class TicketRepositoryImpl implements TicketRepository {
 
         if (!showtimeSnapshot.exists) throw Exception('Suất chiếu không tồn tại!');
 
-        final List<dynamic> currentBookedSeats = showtimeSnapshot.data()?['bookedSeats'] ?? [];
+        // FIX: Tạo bản copy List có thể modify (tránh lỗi "Unsupported operation" trên List bất biến)
+        final List<dynamic> currentBookedSeats =
+            List<dynamic>.from(showtimeSnapshot.data()?['bookedSeats'] ?? []);
+
         for (var seat in selectedSeats) {
           if (currentBookedSeats.contains(seat)) {
             throw Exception('Ghế $seat đã có người đặt!');

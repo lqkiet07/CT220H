@@ -35,7 +35,7 @@ class UserRepositoryImpl implements UserRepository {
         await _firestore.collection('users').doc(credential.user!.uid).set({
           'uid': credential.user!.uid,
           'email': userData['email'],
-          'fullName': userData['fullName'] ?? 'Khách hàng',
+          'name': userData['name'] ?? 'Khách hàng', // Đã đổi fullName -> name
           'role': 'user', // Mặc định ai đăng ký cũng là user thường
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -58,7 +58,14 @@ class UserRepositoryImpl implements UserRepository {
       final doc = await _firestore.collection('users').doc(currentUser.uid).get();
 
       if (doc.exists && doc.data() != null) {
-        return User.fromJson(doc.data()!);
+        final data = doc.data()!;
+        // FIX: Firestore dùng 'uid', Model dùng 'id'
+        data['id'] = doc.id;
+        // Đảm bảo mapping 'name' nếu Firestore cũ vẫn còn 'fullName'
+        if (data['name'] == null && data['fullName'] != null) {
+          data['name'] = data['fullName'];
+        }
+        return User.fromJson(data);
       } else {
         throw Exception('Không tìm thấy thông tin hồ sơ');
       }

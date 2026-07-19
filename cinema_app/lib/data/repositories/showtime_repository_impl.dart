@@ -1,16 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/showtime_repository.dart';
-import '../models/showtime.dart'; // Import đúng model Showtime của bạn
+import '../models/showtime.dart';
 import '../models/seat.dart';
+
 class ShowtimeRepositoryImpl implements ShowtimeRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   ShowtimeRepositoryImpl();
 
+  // ── READ ──────────────────────────────────────────────────────
+
   @override
   Future<List<Showtime>> getShowtimesByMovie(String movieId) async {
     try {
-      // Tìm tất cả các suất chiếu có chứa đúng mã ID của phim này
       final snapshot = await _firestore
           .collection('showtimes')
           .where('movieId', isEqualTo: movieId)
@@ -26,32 +28,23 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     }
   }
 
-  // Nhớ import model Seat vào đầu file: import '../models/seat.dart';
-
   @override
   Future<List<Seat>> getSeatsByShowtime(String showtimeId) async {
     try {
-      final doc = await _firestore.collection('showtimes').doc(showtimeId).get();
+      final doc =
+          await _firestore.collection('showtimes').doc(showtimeId).get();
       if (doc.exists && doc.data() != null) {
-        final List<dynamic> bookedSeats = doc.data()!['bookedSeats'] ?? [];
+        // FIX (từ Bước 1): Tạo bản copy List để tránh Unmodifiable error
+        final List<dynamic> bookedSeats =
+            List<dynamic>.from(doc.data()!['bookedSeats'] ?? []);
 
         return bookedSeats.map((seatStr) {
-          final String currentSeat = seatStr.toString(); // VD: "A5" hoặc "H12"
-
-          // 1. Tách lấy chữ cái đầu làm Hàng (VD: "A5" -> row = "A")
-          final String row = currentSeat.isNotEmpty ? currentSeat[0] : '';
-
-          // 2. Tách lấy phần số phía sau làm Số ghế (VD: "A5" -> number = 5)
-          // Dùng int.tryParse để ép kiểu an toàn, nếu lỗi thì mặc định là 0
-          final int number = currentSeat.length > 1
-              ? (int.tryParse(currentSeat.substring(1)) ?? 0)
+          final String current = seatStr.toString();
+          final String row = current.isNotEmpty ? current[0] : '';
+          final int number = current.length > 1
+              ? (int.tryParse(current.substring(1)) ?? 0)
               : 0;
-
-          return Seat(
-            id: currentSeat,
-            row: row,
-            number: number, // Đã truyền vào biến kiểu int, hết lỗi Type!
-          );
+          return Seat(id: current, row: row, number: number);
         }).toList();
       }
       return [];
@@ -60,4 +53,43 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     }
   }
 
+  // ── ADMIN CRUD ────────────────────────────────────────────────
+
+  @override
+  Future<void> addShowtime(Showtime showtime) async {
+    try {
+      // Lưu Timestamp thay vì String ISO để nhất quán với Firestore
+      final data = showtime.toJson();
+      data['startTime'] = Timestamp.fromDate(showtime.startTime);
+      // Khởi tạo mảng ghế đã đặt rỗng khi tạo suất chiếu mới
+      data['bookedSeats'] = [];
+      await _firestore.collection('showtimes').add(data);
+    } catch (e) {
+      throw Exception('Lỗi thêm suất chiếu: $e');
+    }
+  }
+
+  @override
+  Future<void> updateShowtime(Showtime showtime) async {
+    try {
+      final data = showtime.toJson();
+      data['startTime'] = Timestamp.fromDate(showtime.startTime);
+      await _firestore
+          .collection('showtimes')
+          .doc(showtime.id)
+          .update(data);
+    } catch (e) {
+      throw Exception('Lỗi cập nhật suất chiếu: $e');
+    }
+  }
+
+  @override
+  Future<bool> deleteShowtime(String showtimeId) async {
+    try {
+      await _firestore.collection('showtimes').doc(showtimeId).delete();
+      return true;
+    } catch (e) {
+      throw Exception('Lỗi xóa suất chiếu: $e');
+    }
+  }
 }

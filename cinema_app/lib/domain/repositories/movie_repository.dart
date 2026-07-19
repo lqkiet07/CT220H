@@ -4,9 +4,13 @@ import '../../data/models/movie.dart';
 abstract class MovieRepository {
   Future<List<Movie>> getTrendingMovies();
   Future<Movie> getMovieDetail(String id);
+
+  // FIX: Thêm 2 methods bị thiếu trong interface (đã có trong impl)
+  Future<List<Movie>> getNowPlayingMovies();
+  Future<List<Movie>> getComingSoonMovies();
   
   // Admin Methods
   Future<void> addMovie(Movie movie);
   Future<void> updateMovie(Movie movie);
-  Future<void> deleteMovie(String id);
+  Future<bool> deleteMovie(String id);
 }
