@@ -130,7 +130,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.access_time_filled_rounded,
                     color: Colors.orangeAccent,
                     onTap: () {
-                      SnackbarUtils.showInfo(context, 'Tính năng Suất Chiếu đang phát triển!');
+                      context.push('/admin_showtimes');
                     },
                   ),
                   _buildAdminMenuCard(

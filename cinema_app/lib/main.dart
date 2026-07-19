@@ -9,46 +9,83 @@ import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
 
-// Repositories & Providers
+// --- IMPORTS REPOSITORIES (Interfaces) ---
+import 'domain/repositories/movie_repository.dart';
+import 'domain/repositories/user_repository.dart';
+import 'domain/repositories/showtime_repository.dart';
+import 'domain/repositories/ticket_repository.dart';
+
+// --- IMPORTS REPOSITORIES (Implementations) ---
 import 'data/repositories/movie_repository_impl.dart';
+import 'data/repositories/user_repository_impl.dart';
+import 'data/repositories/showtime_repository_impl.dart';
+import 'data/repositories/ticket_repository_impl.dart';
+
+// --- IMPORTS PROVIDERS ---
 import 'presentation/providers/movie_provider.dart';
 import 'presentation/providers/auth_provider.dart';
-import 'domain/repositories/movie_repository.dart';
+import 'presentation/providers/showtime_provider.dart'; // <-- Mới thêm
+import 'presentation/providers/ticket_provider.dart';   // <-- Mới thêm
 
 void main() async {
-  // 1. Đảm bảo Flutter Core được khởi tạo trước khi gọi Firebase
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Khởi tạo Firebase với cấu hình tự động sinh ra từ lệnh CLI
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 3. Khởi tạo Repository (Lưu ý: Không còn truyền apiService vào đây nữa)
+  // Khởi tạo các Repository
   final movieRepository = MovieRepositoryImpl();
+  final userRepository = UserRepositoryImpl();
+  final showtimeRepository = ShowtimeRepositoryImpl();
+  final ticketRepository = TicketRepositoryImpl();
 
   runApp(CinemaApp(
     movieRepository: movieRepository,
+    userRepository: userRepository,
+    showtimeRepository: showtimeRepository,
+    ticketRepository: ticketRepository,
   ));
 }
 
 class CinemaApp extends StatelessWidget {
   final MovieRepository movieRepository;
+  final UserRepository userRepository;
+  final ShowtimeRepository showtimeRepository;
+  final TicketRepository ticketRepository;
 
   const CinemaApp({
     super.key,
     required this.movieRepository,
+    required this.userRepository,
+    required this.showtimeRepository,
+    required this.ticketRepository,
   });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // 1. Tiêm Repositories
+        Provider<MovieRepository>.value(value: movieRepository),
+        Provider<UserRepository>.value(value: userRepository),
+        Provider<ShowtimeRepository>.value(value: showtimeRepository),
+        Provider<TicketRepository>.value(value: ticketRepository),
+
+        // 2. Khởi tạo State Providers
         ChangeNotifierProvider(
           create: (_) => MovieProvider(movieRepository)..fetchTrendingMovies(),
         ),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
+          create: (_) => AuthProvider(userRepository),
+        ),
+
+        // --- 2 PROVIDER MỚI ĐÃ ĐƯỢC THÊM VÀO ---
+        ChangeNotifierProvider(
+          create: (_) => ShowtimeProvider(showtimeRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => TicketProvider(ticketRepository),
         ),
       ],
       child: MaterialApp.router(

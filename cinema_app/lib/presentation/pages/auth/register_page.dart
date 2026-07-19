@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../providers/auth_provider.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -32,21 +34,29 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      
-      // Giả lập xử lý đăng ký
-      await Future.delayed(const Duration(seconds: 1));
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
       
       if (mounted) {
-        setState(() => _isLoading = false);
-        SnackbarUtils.showSuccess(context, 'Đăng ký thành công! Hãy đăng nhập.');
-        context.pop(); // Quay lại trang Login
+        if (success) {
+          SnackbarUtils.showSuccess(context, 'Đăng ký thành công! Hãy đăng nhập.');
+          context.pop(); // Quay lại trang Login
+        } else {
+          SnackbarUtils.showError(context, authProvider.error);
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final isLoading = authProvider.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -170,7 +180,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
+                    onPressed: isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -179,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       elevation: 10,
                       shadowColor: AppColors.primary.withOpacity(0.5),
                     ),
-                    child: _isLoading 
+                    child: isLoading
                         ? const SizedBox(
                             width: 24, 
                             height: 24, 

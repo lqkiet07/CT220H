@@ -1,8 +1,9 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/services/qr_service.dart';
 import '../../../data/models/movie.dart';
 import '../../../data/mock/mock_data.dart';
 
@@ -21,14 +22,31 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
+  late String _qrData;
+
   @override
   void initState() {
     super.initState();
-    final movieId = widget.bookingData['movieId'];
-    movie = MockData.getMovies().firstWhere((m) => m.id == movieId);
-    
-    // Sinh mã vé ngẫu nhiên (Ví dụ: TICKET-123456)
-    ticketId = 'TICKET-${Random().nextInt(900000) + 100000}';
+    final movieId = widget.bookingData['movieId'] as String? ?? '';
+    movie = MockData.getMovies().firstWhere(
+      (m) => m.id == movieId,
+      orElse: () => MockData.getMovies().first,
+    );
+
+    // FIX: Dùng QrService tạo ticketId có cấu trúc CT-XXXXXXX
+    final uid = widget.bookingData['uid'] as String? ?? 'guest';
+    ticketId = QrService.generateTicketId(uid: uid);
+
+    // Tạo chuỗi QR đầy đủ thông tin vé (có checksum)
+    final seats = (widget.bookingData['seats'] as List?)?.cast<String>() ?? [];
+    final showtimeId = widget.bookingData['showtimeId'] as String? ?? 'N/A';
+    _qrData = QrService.generateQrData(
+      ticketId:   ticketId,
+      movieTitle: movie.title,
+      showtimeId: showtimeId,
+      seats:      seats,
+      uid:        uid,
+    );
 
     // Hiệu ứng pop-up cho mã QR
     _animationController = AnimationController(
@@ -119,11 +137,19 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: QrImageView(
-                              data: ticketId,
-                              version: QrVersions.auto,
-                              size: 180.0,
-                              backgroundColor: Colors.white,
+                            child: GestureDetector(
+                              // Giữ QR để copy data (tiện cho debugging)
+                              onLongPress: () {
+                                Clipboard.setData(ClipboardData(text: ticketId));
+                              },
+                              child: QrImageView(
+                                // FIX: Dùng _qrData chứa đầy đủ thông tin vé
+                                data: _qrData,
+                                version: QrVersions.auto,
+                                size: 180.0,
+                                backgroundColor: Colors.white,
+                                errorCorrectionLevel: QrErrorCorrectLevel.H,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),

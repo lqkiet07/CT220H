@@ -1,30 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/movie.dart';
-import '../../../data/mock/mock_data.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../providers/movie_provider.dart';
 
-class MovieDetailPage extends StatelessWidget {
+class MovieDetailPage extends StatefulWidget {
   final String movieId;
   final String? heroTag;
 
   const MovieDetailPage({super.key, required this.movieId, this.heroTag});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: Giai đoạn 2 - Thành viên A sẽ dùng context.read<MovieProvider>() hoặc API
-    // Tạm thời tìm phim trực tiếp từ MockData
-    final Movie? movie = MockData.getMovies().cast<Movie?>().firstWhere(
-      (m) => m?.id == movieId,
+  State<MovieDetailPage> createState() => _MovieDetailPageState();
+}
+
+class _MovieDetailPageState extends State<MovieDetailPage> {
+  Movie? _movie;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMovie();
+  }
+
+  void _loadMovie() async {
+    final movieProvider = context.read<MovieProvider>();
+    // Tìm phim trong list có sẵn
+    final movie = movieProvider.trendingMovies.cast<Movie?>().firstWhere(
+      (m) => m?.id == widget.movieId,
       orElse: () => null,
     );
 
-    if (movie == null) {
+    if (movie != null) {
+      setState(() {
+        _movie = movie;
+        _isLoading = false;
+      });
+    } else {
+      // Nếu chưa có (ví dụ: truy cập link trực tiếp), có thể fetch detail nếu cần
+      // Tạm thời lấy từ list trending (đã fetch ở main)
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_movie == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Lỗi')),
         body: const Center(child: Text('Không tìm thấy phim!')),
       );
     }
+
+    final movie = _movie!;
 
     return Scaffold(
       body: CustomScrollView(
@@ -32,11 +68,9 @@ class MovieDetailPage extends StatelessWidget {
         slivers: [
           // PHẦN POSTER PHIM TRÀN VIỀN
           SliverAppBar(
-            // Tự động tính toán chiều cao dựa trên chiều rộng màn hình (tỷ lệ gần 2:3)
             expandedHeight: MediaQuery.of(context).size.width * 1.3,
-            pinned: true, // Khi cuộn lên sẽ ghim lại thành thanh AppBar
+            pinned: true,
             backgroundColor: AppColors.background,
-            // Thêm nút Back có nền đen mờ (Glassmorphism) chống lóa
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
@@ -54,13 +88,12 @@ class MovieDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Ảnh poster phim có hiệu ứng Hero
                   Hero(
-                    tag: heroTag ?? 'poster_${movie.id}',
+                    tag: widget.heroTag ?? 'poster_${movie.id}',
                     child: Image.network(
                       movie.posterUrl,
                       fit: BoxFit.cover,
-                      alignment: Alignment.topCenter, // Ưu tiên hiển thị từ trên cùng xuống để không mất chữ và mặt diễn viên
+                      alignment: Alignment.topCenter,
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.surface,
                         child: const Center(
@@ -69,7 +102,6 @@ class MovieDetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Hiệu ứng Gradient làm mờ ảnh hòa vào nền Đen ở bên dưới
                   const DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -83,7 +115,6 @@ class MovieDetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Nút Play Trailer (Glassmorphism) nằm chính giữa
                   Center(
                     child: Container(
                       decoration: BoxDecoration(
@@ -95,8 +126,7 @@ class MovieDetailPage extends StatelessWidget {
                         iconSize: 48,
                         icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
                         onPressed: () {
-                          // TODO: Mở popup phát trailer
-                          print('Phát trailer phim');
+                          // TODO: Trailer
                         },
                       ),
                     ),
@@ -106,14 +136,12 @@ class MovieDetailPage extends StatelessWidget {
             ),
           ),
           
-          // PHẦN NỘI DUNG THÔNG TIN PHIM
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tên phim và Nhãn độ tuổi
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -148,7 +176,6 @@ class MovieDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   
-                  // Khung Thông tin cơ bản (Glassmorphism style)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
@@ -184,7 +211,6 @@ class MovieDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Thể loại phim (Hiển thị dạng các viên thuốc cách điệu Cyberpunk)
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
@@ -208,7 +234,6 @@ class MovieDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Tóm tắt phim (Phần chữ giả)
                   const Text(
                     'Nội dung phim',
                     style: TextStyle(
@@ -219,57 +244,14 @@ class MovieDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Đây là một siêu phẩm điện ảnh bom tấn với những kỹ xảo hoành tráng và cốt truyện đầy cảm động. '
-                    'Một kiệt tác nghệ thuật thứ bảy mà bạn chắc chắn không thể bỏ lỡ trong dịp cuối tuần này. '
-                    '\n\n(Đoạn nội dung tóm tắt này tạm thời được tạo giả lập vì Database hiện tại chưa thiết kế trường "synopsis").',
+                    'Đây là một siêu phẩm điện ảnh bom tấn với những kỹ xảo hoành tráng và cốt truyện đầy cảm động. Một kiệt tác nghệ thuật thứ bảy mà bạn chắc chắn không thể bỏ lỡ.',
                     style: TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Đạo diễn & Diễn viên (Giả lập)
-                  const Text(
-                    'Đạo diễn & Diễn viên',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: 6,
-                      itemBuilder: (context, index) {
-                        // Tạo mảng tên ngẫu nhiên
-                        final names = ['Lý Hải', 'Quách Ngọc Tuyên', 'Đinh Y Nhung', 'Tiết Cương', 'Thanh Thức', 'Khách mời'];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 32,
-                                backgroundColor: AppColors.surface,
-                                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=${index + 11}'), // Link ảnh giả lập khuôn mặt
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                names[index],
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 100), // Chừa khoảng trống để không bị khuất bởi nút dưới cùng
+                  const SizedBox(height: 100), 
                 ],
               ),
             ),
@@ -277,7 +259,6 @@ class MovieDetailPage extends StatelessWidget {
         ],
       ),
       
-      // NÚT MUA VÉ LUÔN NỔI LÊN TRÊN (BOTTOM STICKY BAR CÓ GLOW)
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -288,7 +269,7 @@ class MovieDetailPage extends StatelessWidget {
                 BoxShadow(
                   color: AppColors.primary.withOpacity(0.4),
                   blurRadius: 20,
-                  offset: const Offset(0, 8), // Hiệu ứng Glow rực sáng dưới đáy
+                  offset: const Offset(0, 8),
                 ),
               ],
               gradient: const LinearGradient(
@@ -300,21 +281,20 @@ class MovieDetailPage extends StatelessWidget {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent, // Tắt bóng mặc định để xài bóng của Container
+                shadowColor: Colors.transparent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
               onPressed: () {
-                // Điều hướng sang trang Chọn Suất chiếu thay vì Chọn Ghế
                 context.push('/showtimes/${movie.id}');
               },
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.confirmation_num, color: Colors.white),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     'ĐẶT VÉ NGAY',
                     style: TextStyle(

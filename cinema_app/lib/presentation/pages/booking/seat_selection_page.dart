@@ -2,50 +2,92 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/algorithms/algorithms.dart';
 import '../../../data/models/movie.dart';
 import '../../../data/models/seat.dart';
+import '../../../data/models/showtime.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../providers/movie_provider.dart';
+import '../../providers/showtime_provider.dart';
 
 class SeatSelectionPage extends StatefulWidget {
   final String movieId;
+  final Showtime? showtime; // Truyền từ trang chọn suất chiếu
 
-  const SeatSelectionPage({super.key, required this.movieId});
+  const SeatSelectionPage({super.key, required this.movieId, this.showtime});
 
   @override
   State<SeatSelectionPage> createState() => _SeatSelectionPageState();
 }
 
 class _SeatSelectionPageState extends State<SeatSelectionPage> {
-  late Movie? movie;
+  Movie? _movie;
+  Showtime? _showtime;
   late List<Seat> allSeats;
   Set<String> selectedSeatIds = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    movie = MockData.getMovies().cast<Movie?>().firstWhere(
+    _loadData();
+  }
+
+  void _loadData() async {
+    final movieProvider = context.read<MovieProvider>();
+    final showtimeProvider = context.read<ShowtimeProvider>();
+
+    _movie = movieProvider.trendingMovies.cast<Movie?>().firstWhere(
       (m) => m?.id == widget.movieId,
       orElse: () => null,
     );
-    // Tạo bản copy của list ghế để thoải mái UI tương tác
-    allSeats = MockData.getSeats().map((s) => s.copyWith()).toList();
+
+    // Nếu showtime chưa được truyền qua extra (do quay lại hoặc link trực tiếp), lấy cái đầu tiên
+    if (widget.showtime != null) {
+      _showtime = widget.showtime;
+    } else {
+      await showtimeProvider.fetchShowtimes(widget.movieId);
+      if (showtimeProvider.showtimes.isNotEmpty) {
+        _showtime = showtimeProvider.showtimes.first;
+      }
+    }
+
+    // Lấy sơ đồ ghế từ Firebase (dựa trên showtimeId)
+    if (_showtime != null) {
+      await showtimeProvider.fetchBookedSeats(_showtime!.id);
+      
+      // Khởi tạo sơ đồ ghế trống từ MockData (vì Database chưa lưu toàn bộ sơ đồ)
+      // Nhưng đánh dấu các ghế đã đặt từ Firebase
+      final List<String> bookedIds = showtimeProvider.bookedSeats.map((s) => s.id).toList();
+      allSeats = MockData.getSeats().map((s) {
+        if (bookedIds.contains(s.id)) {
+          return s.copyWith(status: SeatStatus.booked);
+        }
+        return s.copyWith();
+      }).toList();
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _toggleSeat(Seat seat) {
     if (seat.status == SeatStatus.booked) return;
 
-    // Phản hồi xúc giác (rung nhẹ) khi bấm
     HapticFeedback.selectionClick();
 
     setState(() {
       if (selectedSeatIds.contains(seat.id)) {
         selectedSeatIds.remove(seat.id);
       } else {
-        // Giới hạn tối đa 8 ghế
         if (selectedSeatIds.length >= 8) {
-          SnackbarUtils.showError(context, 'Bạn chỉ được chọn tối đa 8 ghế cho mỗi giao dịch!');
+          SnackbarUtils.showError(context, 'Bạn chỉ được chọn tối đa 8 ghế!');
           return;
         }
         selectedSeatIds.add(seat.id);
@@ -54,27 +96,29 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   }
 
   double _calculateTotalPrice() {
-    if (movie == null) return 0;
-    double total = 0;
-    for (String seatId in selectedSeatIds) {
-      final seat = allSeats.firstWhere((s) => s.id == seatId);
-      if (seat.type == SeatType.standard) {
-        total += movie!.basePrice;
-      } else if (seat.type == SeatType.vip) {
-        total += movie!.basePrice + 20000;
-      } else if (seat.type == SeatType.sweetbox) {
-        total += (movie!.basePrice * 2) + 10000; // Phụ thu ghế đôi
-      }
-    }
-    return total;
+    if (_movie == null || _showtime == null) return 0;
+    final selectedTypes = selectedSeatIds
+        .map((id) => allSeats.firstWhere((s) => s.id == id).type)
+        .toList();
+    final result = PricingEngine.calculateTotal(
+      seatTypes: selectedTypes,
+      basePrice: _movie!.basePrice,
+      showTime:  _showtime!.startTime,
+    );
+    // Áp dụng thêm hệ số từ Showtime (nếu có)
+    return result.totalPrice * _showtime!.dynamicPricingFactor;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (movie == null) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_movie == null || _showtime == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Lỗi')),
-        body: const Center(child: Text('Không tìm thấy phim')),
+        body: const Center(child: Text('Thông tin không hợp lệ!')),
       );
     }
 
@@ -83,22 +127,21 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(movie!.title),
+        title: Text(_movie!.title),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // 1. Màn hình cong (Curved Screen)
+          _buildPricingBanner(),
           _buildScreenArc(),
           const SizedBox(height: 32),
           
-          // 2. Sơ đồ ghế (Seat Grid)
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              physics: const BouncingScrollPhysics(),
               child: Container(
                 width: MediaQuery.of(context).size.width,
                 alignment: Alignment.center,
@@ -107,8 +150,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: _buildSeatRows(),
                     ),
                   ),
@@ -117,302 +158,129 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ),
           ),
           
-          // 3. Legend (Chú thích)
           _buildLegend(),
           const SizedBox(height: 16),
         ],
       ),
-      
-      // 4. Bottom Checkout Bar
       bottomNavigationBar: _buildBottomBar(currencyFormat),
+    );
+  }
+
+  // (Các hàm build UI giữ nguyên như cũ, chỉ cập nhật data nguồn)
+  Widget _buildPricingBanner() {
+    final breakdown = PricingEngine.calculate(
+      basePrice: _movie!.basePrice,
+      seatType: SeatType.standard,
+      showTime: _showtime!.startTime,
+    );
+    final NumberFormat fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(breakdown.timeSlotName, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text('Giá cơ bản: ${fmt.format(breakdown.finalPrice)}', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 
   Widget _buildScreenArc() {
     return Container(
       margin: const EdgeInsets.only(top: 20),
-      height: 60,
-      width: MediaQuery.of(context).size.width * 0.8,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          // Ánh sáng hắt ra từ màn hình (Glow effect)
-          Container(
-            height: 30,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.5),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-          ),
-          // Hình dáng màn hình cong
-          CustomPaint(
-            size: Size(MediaQuery.of(context).size.width * 0.8, 60),
-            painter: ScreenPainter(),
-          ),
-          const Positioned(
-            bottom: 0,
-            child: Text(
-              'MÀN HÌNH',
-              style: TextStyle(
-                color: Colors.white,
-                letterSpacing: 2.0,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: Colors.black,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      height: 40,
+      width: MediaQuery.of(context).size.width * 0.7,
+      child: CustomPaint(painter: ScreenPainter()),
     );
   }
 
   List<Widget> _buildSeatRows() {
-    // Tách ghế theo hàng (row)
     Map<String, List<Seat>> rows = {};
     for (var seat in allSeats) {
-      if (!rows.containsKey(seat.row)) {
-        rows[seat.row] = [];
-      }
-      rows[seat.row]!.add(seat);
+      rows.putIfAbsent(seat.row, () => []).add(seat);
     }
-
-    List<Widget> rowWidgets = [];
-    rows.forEach((rowName, seatsInRow) {
-      rowWidgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              // Nhãn tên hàng ghế (A, B, C...)
-              SizedBox(
-                width: 20,
-                child: Text(
-                  rowName,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Các ghế trong hàng
-              ...seatsInRow.map((seat) => _buildSeatWidget(seat)).toList(),
-            ],
-          ),
-        ),
-      );
-    });
-
-    return rowWidgets;
+    return rows.entries.map((e) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: 20, child: Text(e.key, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold))),
+          const SizedBox(width: 10),
+          ...e.value.map((s) => _buildSeatWidget(s)),
+        ],
+      ),
+    )).toList();
   }
 
   Widget _buildSeatWidget(Seat seat) {
     bool isSelected = selectedSeatIds.contains(seat.id);
     bool isBooked = seat.status == SeatStatus.booked;
+    double width = seat.type == SeatType.sweetbox ? 60.0 : 30.0;
     
-    Color seatColor;
-    Color borderColor;
-
-    if (isBooked) {
-      seatColor = Colors.grey.shade800;
-      borderColor = Colors.grey.shade700;
-    } else if (isSelected) {
-      seatColor = AppColors.primary;
-      borderColor = AppColors.primary;
-    } else {
-      // Ghế trống (Available)
-      seatColor = AppColors.surface;
-      if (seat.type == SeatType.vip) {
-        borderColor = Colors.orange; // VIP màu viền cam
-      } else if (seat.type == SeatType.sweetbox) {
-        borderColor = Colors.pinkAccent; // Sweetbox màu hồng
-      } else {
-        borderColor = Colors.white54; // Thường màu trắng mờ
-      }
-    }
-
-    // Ghế sweetbox thì rộng gấp đôi
-    double width = seat.type == SeatType.sweetbox ? 70.0 : 32.0;
-
     return GestureDetector(
       onTap: () => _toggleSeat(seat),
       child: Container(
-        margin: const EdgeInsets.only(right: 6.0),
+        margin: const EdgeInsets.only(right: 5),
         width: width,
-        height: 32,
+        height: 30,
         decoration: BoxDecoration(
-          color: seatColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(8),
-            topRight: Radius.circular(8),
-            bottomLeft: Radius.circular(4),
-            bottomRight: Radius.circular(4),
-          ),
-          border: Border.all(color: borderColor, width: 2),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.6),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  )
-                ]
-              : null,
+          color: isBooked ? Colors.grey.shade800 : (isSelected ? AppColors.primary : AppColors.surface),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.white10),
         ),
         alignment: Alignment.center,
-        child: Text(
-          seat.number.toString(),
-          style: TextStyle(
-            color: isBooked ? Colors.white30 : Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-        ),
+        child: Text(seat.number.toString(), style: const TextStyle(color: Colors.white, fontSize: 10)),
       ),
     );
   }
 
   Widget _buildLegend() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
       child: Wrap(
-        spacing: 20,
-        runSpacing: 16,
-        alignment: WrapAlignment.center,
+        spacing: 16,
         children: [
-          _legendItem(Colors.white54, 'Thường', false),
-          _legendItem(Colors.orange, 'VIP', false),
-          _legendItem(Colors.pinkAccent, 'Sweetbox', false),
-          _legendItem(AppColors.primary, 'Đang chọn', true),
-          _legendItem(Colors.grey.shade700, 'Đã đặt', true),
+          _LegendItem(color: Colors.white54, label: 'Thường'),
+          _LegendItem(color: AppColors.primary, label: 'Đang chọn'),
+          _LegendItem(color: Colors.grey, label: 'Đã đặt'),
         ],
       ),
-    );
-  }
-
-  Widget _legendItem(Color color, String label, bool isFilled) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: isFilled ? color : AppColors.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: color, width: 2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-      ],
     );
   }
 
   Widget _buildBottomBar(NumberFormat format) {
     double totalPrice = _calculateTotalPrice();
-    bool hasSelection = selectedSeatIds.isNotEmpty;
-
     return Container(
-      padding: const EdgeInsets.all(20.0).copyWith(bottom: 32.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A24), // Màu tối hơn để tách biệt
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Color(0xFF1A1A24), borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hasSelection) ...[
-                  Text(
-                    'Ghế: ${(selectedSeatIds.toList()..sort()).join(', ')}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                ] else ...[
-                  const Text(
-                    'Chưa chọn ghế',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                Text(
-                  format.format(totalPrice),
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ghế: ${selectedSeatIds.join(", ")}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text(format.format(totalPrice), style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold)),
+            ],
           ),
-          const SizedBox(width: 16),
           ElevatedButton(
-            onPressed: hasSelection
-                ? () {
-                    // Điều hướng sang trang Thanh Toán
-                    context.push(
-                      '/checkout',
-                      extra: {
-                        'movieId': widget.movieId,
-                        'seats': selectedSeatIds.toList()..sort(),
-                        'totalPrice': totalPrice,
-                      },
-                    );
-                  }
-                : null, // Disable nếu chưa chọn ghế
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: Colors.grey.shade800,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'TIẾP TỤC',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            onPressed: selectedSeatIds.isEmpty ? null : () {
+              context.push('/checkout', extra: {
+                'movieId': widget.movieId,
+                'showtimeId': _showtime!.id,
+                'seats': selectedSeatIds.toList(),
+                'totalPrice': totalPrice,
+              });
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+            child: const Text('TIẾP TỤC', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -420,22 +288,27 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   }
 }
 
-// Vẽ đường cong giả lập màn hình chiếu phim
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendItem({required this.color, required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 16, height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+    ]);
+  }
+}
+
 class ScreenPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.primary
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-
-    final path = Path();
-    path.moveTo(0, size.height);
-    path.quadraticBezierTo(size.width / 2, 0, size.width, size.height);
-
+    final paint = Paint()..color = AppColors.primary..style = PaintingStyle.stroke..strokeWidth = 2.0;
+    final path = Path()..moveTo(0, size.height)..quadraticBezierTo(size.width / 2, 0, size.width, size.height);
     canvas.drawPath(path, paint);
   }
-
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

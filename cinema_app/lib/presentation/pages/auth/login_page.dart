@@ -28,22 +28,23 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      
-      // Call AuthProvider to authenticate
+      // AuthProvider handles loading state internally now
       final authProvider = context.read<AuthProvider>();
-      await authProvider.login(
+      final success = await authProvider.login(
         _emailController.text.trim(), 
         _passwordController.text,
       );
       
       if (mounted) {
-        setState(() => _isLoading = false);
-        // Route to Admin Dashboard or Customer Home after login
-        if (authProvider.isAdmin) {
-          context.go('/admin_dashboard');
+        if (success) {
+          // Route to Admin Dashboard or Customer Home after login
+          if (authProvider.isAdmin) {
+            context.go('/admin_dashboard');
+          } else {
+            context.go('/');
+          }
         } else {
-          context.go('/');
+          SnackbarUtils.showError(context, authProvider.error);
         }
       }
     }
@@ -51,6 +52,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final isLoading = authProvider.isLoading;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -148,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                    onPressed: isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -157,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                       elevation: 10,
                       shadowColor: AppColors.primary.withOpacity(0.5),
                     ),
-                    child: _isLoading 
+                    child: isLoading
                         ? const SizedBox(
                             width: 24, 
                             height: 24, 

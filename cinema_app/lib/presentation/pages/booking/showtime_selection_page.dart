@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../data/mock/mock_data.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/movie.dart';
 import '../../../data/models/showtime.dart';
-import '../../../data/models/room.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../providers/movie_provider.dart';
+import '../../providers/showtime_provider.dart';
 
 class ShowtimeSelectionPage extends StatefulWidget {
   final String movieId;
@@ -18,32 +19,64 @@ class ShowtimeSelectionPage extends StatefulWidget {
 
 class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
   DateTime _selectedDate = DateTime.now();
-  late Movie _movie;
-  List<Showtime> _showtimes = [];
-  List<Room> _rooms = [];
+  Movie? _movie;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Tạm thời dùng MockData để render UI
-    _movie = MockData.getMovies().firstWhere((m) => m.id == widget.movieId);
-    _showtimes = MockData.getShowtimes().where((s) => s.movieId == widget.movieId).toList();
-    _rooms = MockData.getRooms();
+    _loadData();
   }
 
-  // Tạo danh sách 7 ngày tới
+  void _loadData() async {
+    final movieProvider = context.read<MovieProvider>();
+    final showtimeProvider = context.read<ShowtimeProvider>();
+
+    _movie = movieProvider.trendingMovies.cast<Movie?>().firstWhere(
+      (m) => m?.id == widget.movieId,
+      orElse: () => null,
+    );
+
+    await showtimeProvider.fetchShowtimes(widget.movieId);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   List<DateTime> _generateDates() {
     return List.generate(7, (index) => DateTime.now().add(Duration(days: index)));
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_movie == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Lỗi')),
+        body: const Center(child: Text('Không tìm thấy phim!')),
+      );
+    }
+
     final dates = _generateDates();
+    final showtimeProvider = context.watch<ShowtimeProvider>();
+    
+    // Lọc suất chiếu theo ngày được chọn
+    final filteredShowtimes = showtimeProvider.showtimes.where((s) {
+      return s.startTime.day == _selectedDate.day &&
+             s.startTime.month == _selectedDate.month &&
+             s.startTime.year == _selectedDate.year;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _movie.title,
+          _movie!.title,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: AppColors.background,
@@ -52,7 +85,6 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // LỊCH CHỌN NGÀY (DATE SELECTOR)
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Text(
@@ -132,88 +164,35 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
           
           const Divider(color: Colors.white10, height: 32, thickness: 1),
 
-          // DANH SÁCH RẠP VÀ SUẤT CHIẾU
           Expanded(
-            child: _showtimes.isEmpty 
+            child: filteredShowtimes.isEmpty 
               ? const Center(
                   child: Text('Không có suất chiếu nào cho ngày này.', style: TextStyle(color: AppColors.textSecondary)),
                 )
               : ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _rooms.length,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredShowtimes.length,
                   itemBuilder: (context, index) {
-                    final room = _rooms[index];
-                    // Lọc suất chiếu theo rạp (giả lập đơn giản)
-                    final roomShowtimes = _showtimes.where((s) => s.roomId == room.id).toList();
-                    
-                    if (roomShowtimes.isEmpty) return const SizedBox.shrink();
+                    final showtime = filteredShowtimes[index];
+                    final timeString = DateFormat('HH:mm').format(showtime.startTime);
+                    final isPast = showtime.startTime.isBefore(DateTime.now());
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Tên Cụm Rạp
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on, color: AppColors.primary, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                room.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Các nút chọn giờ chiếu (Pill shape)
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: roomShowtimes.map((showtime) {
-                              final timeString = DateFormat('HH:mm').format(showtime.startTime);
-                              
-                              // Logic kiểm tra vé đã quá hạn (so với thời điểm hiện tại)
-                              // Nếu rạp thực tế, còn phải xem ngày đang chọn có phải hôm nay không
-                              final isToday = _selectedDate.day == DateTime.now().day && _selectedDate.month == DateTime.now().month;
-                              final isPast = isToday && showtime.startTime.isBefore(DateTime.now());
-
-                              return InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: isPast ? null : () {
-                                  // Chuyển sang Trang Chọn Ghế và truyền ID của phim
-                                  context.push('/booking/${widget.movieId}');
-                                },
-                                child: Opacity(
-                                  opacity: isPast ? 0.3 : 1.0, // Làm mờ nếu đã qua giờ
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: isPast ? AppColors.background : AppColors.surface,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: isPast ? Colors.white10 : Colors.white24),
-                                    ),
-                                    child: Text(
-                                      timeString,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: isPast ? Colors.grey : AppColors.textPrimary,
-                                        letterSpacing: 1.1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 16),
-                          const Divider(color: Colors.white10),
-                        ],
+                    return Card(
+                      color: AppColors.surface,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: ListTile(
+                        leading: const Icon(Icons.access_time, color: AppColors.primary),
+                        title: Text(timeString, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        subtitle: Text('Phòng: ${showtime.roomId}', style: const TextStyle(color: Colors.white70)),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white54),
+                        enabled: !isPast,
+                        onTap: () {
+                           context.push(
+                            '/booking/${widget.movieId}',
+                            extra: {'showtime': showtime},
+                          );
+                        },
                       ),
                     );
                   },

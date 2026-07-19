@@ -2,9 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../../data/models/movie.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/ticket_provider.dart';
 
 class CheckoutPage extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -241,11 +246,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               // Hủy đồng hồ
               _timer?.cancel();
               
-              // Giả lập Loading thanh toán 1.5 giây
+              final authProvider = context.read<AuthProvider>();
+              final ticketProvider = context.read<TicketProvider>();
+
+              final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest_uid_for_testing';
+              
+              if (!authProvider.isLoggedIn && FirebaseAuth.instance.currentUser == null) {
+                SnackbarUtils.showError(context, 'Bạn cần đăng nhập để đặt vé!');
+                return;
+              }
+
+              // Hiện Loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -254,12 +269,29 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
               );
 
-              Future.delayed(const Duration(milliseconds: 1500), () {
-                // Đóng dialog loading
-                Navigator.of(context).pop();
-                // Chuyển sang trang Success
-                context.push('/success', extra: widget.bookingData);
-              });
+              final showtimeId = widget.bookingData['showtimeId'] as String? ?? '';
+              final totalPrice = (widget.bookingData['totalPrice'] as num).toDouble();
+
+              // Gọi API đặt vé qua provider (trong ruột là runTransaction)
+              final bool success = await ticketProvider.bookTicket(
+                showtimeId: showtimeId,
+                userId: uid,
+                totalPrice: totalPrice,
+              );
+
+              if (!context.mounted) return;
+              
+              // Đóng dialog loading
+              Navigator.of(context).pop();
+
+              if (success) {
+                // Truyền thêm uid vào bookingData để QrService dùng
+                final extraData = Map<String, dynamic>.from(widget.bookingData);
+                extraData['uid'] = uid;
+                context.push('/success', extra: extraData);
+              } else {
+                SnackbarUtils.showError(context, ticketProvider.errorMessage ?? 'Đặt vé thất bại');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,

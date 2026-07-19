@@ -106,7 +106,13 @@ Widget _buildTicketCard({
 }) {
   return GestureDetector(
     onTap: () {
-      context.push('/payment_success');
+      // FIX: Route đúng là '/success', không phải '/payment_success'
+      // Truyền mock data để tránh crash do GoRouter yêu cầu extra không được null
+      context.push('/success', extra: {
+        'movieId': 'm1', // Mock ID, trong thực tế cần lấy từ ticket data
+        'seats': [seats],
+        'totalPrice': 0.0,
+      });
     },
     child: Opacity(
       opacity: isPast ? 0.6 : 1.0,

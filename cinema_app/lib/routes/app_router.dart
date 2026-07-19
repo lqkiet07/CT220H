@@ -13,6 +13,7 @@ import '../presentation/pages/booking/my_tickets_page.dart';
 import '../presentation/pages/admin/admin_dashboard_page.dart';
 import '../presentation/pages/admin/admin_movies_page.dart';
 import '../presentation/pages/admin/admin_movie_form_page.dart';
+import '../presentation/pages/admin/admin_showtime_page.dart';
 import '../presentation/pages/profile/account_settings_page.dart';
 import '../presentation/pages/profile/support_page.dart';
 
@@ -104,6 +105,10 @@ class AppRouter {
           final movieId = state.pathParameters['id']!;
           return AdminMovieFormPage(movieId: movieId);
         },
+      ),
+      GoRoute(
+        path: '/admin_showtimes',
+        builder: (BuildContext context, GoRouterState state) => const AdminShowtimePage(),
       ),
     ],
   );
