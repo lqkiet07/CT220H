@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// Import Firebase
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:chopper/chopper.dart';
 
 // Core & Routes
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
 
+<<<<<<< HEAD
 // --- IMPORTS REPOSITORIES (Interfaces) ---
 import 'domain/repositories/movie_repository.dart';
 import 'domain/repositories/user_repository.dart';
@@ -40,6 +38,39 @@ void main() async {
   final userRepository = UserRepositoryImpl();
   final showtimeRepository = ShowtimeRepositoryImpl();
   final ticketRepository = TicketRepositoryImpl();
+=======
+// Data layer
+import 'data/remote/api_service.dart';
+import 'data/remote/mock_interceptor.dart';
+import 'data/repositories/movie_repository_impl.dart';
+import 'data/repositories/showtime_repository_impl.dart';
+
+// Providers
+import 'presentation/providers/movie_provider.dart';
+import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/showtime_provider.dart';
+import 'presentation/providers/booking_provider.dart';
+
+void main() {
+  // Initialize Chopper client with MockInterceptor for local testing
+  final chopperClient = ChopperClient(
+    baseUrl: Uri.parse('http://localhost:8080/api'),
+    services: [
+      ApiService.create(),
+    ],
+    interceptors: [
+      MockInterceptor(),
+      HttpLoggingInterceptor(),
+    ],
+    converter: const JsonConverter(),
+  );
+
+  final apiService = chopperClient.getService<ApiService>();
+
+  // Initialize repositories using MockData
+  final movieRepository = MovieRepositoryImpl(apiService);
+  final showtimeRepository = ShowtimeRepositoryImpl(apiService);
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
 
   runApp(CinemaApp(
     movieRepository: movieRepository,
@@ -50,10 +81,15 @@ void main() async {
 }
 
 class CinemaApp extends StatefulWidget {
+<<<<<<< HEAD
   final MovieRepository movieRepository;
   final UserRepository userRepository;
   final ShowtimeRepository showtimeRepository;
   final TicketRepository ticketRepository;
+=======
+  final MovieRepositoryImpl movieRepository;
+  final ShowtimeRepositoryImpl showtimeRepository;
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
 
   const CinemaApp({
     super.key,
@@ -74,7 +110,11 @@ class _CinemaAppState extends State<CinemaApp> {
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     authProvider = AuthProvider(widget.userRepository);
+=======
+    authProvider = AuthProvider();
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
     appRouter = AppRouter(authProvider);
   }
 
@@ -99,9 +139,12 @@ class _CinemaAppState extends State<CinemaApp> {
           create: (_) => ShowtimeProvider(widget.showtimeRepository),
         ),
         ChangeNotifierProvider(
+<<<<<<< HEAD
           create: (_) => TicketProvider(widget.ticketRepository),
         ),
         ChangeNotifierProvider(
+=======
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
           create: (_) => BookingProvider(),
         ),
       ],

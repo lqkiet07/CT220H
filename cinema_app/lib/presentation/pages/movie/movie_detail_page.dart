@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/movie.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../providers/movie_provider.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class MovieDetailPage extends StatefulWidget {
   final String movieId;
@@ -84,6 +86,31 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 ),
               ),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.share_rounded, color: Colors.white),
+                    onPressed: () {
+                      final movieLink = 'cinema://movie/${movie.id}';
+                      Clipboard.setData(ClipboardData(text: movieLink)).then((_) {
+                        if (context.mounted) {
+                          SnackbarUtils.showSuccess(
+                            context,
+                            'Đã sao chép liên kết phim! Chia sẻ ngay cho bạn bè.',
+                          );
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,

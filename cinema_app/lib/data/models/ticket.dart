@@ -11,6 +11,9 @@ class Ticket extends Equatable {
   final double totalPrice;
   final DateTime bookingTime;
   final String qrCodeData;
+  final String showtimeId;
+  final String roomName;
+  final String startTime;
 
   const Ticket({
     required this.id,
@@ -19,11 +22,14 @@ class Ticket extends Equatable {
     required this.totalPrice,
     required this.bookingTime,
     required this.qrCodeData,
+    required this.showtimeId,
+    required this.roomName,
+    required this.startTime,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) => _$TicketFromJson(json);
   Map<String, dynamic> toJson() => _$TicketToJson(this);
 
   @override
-  List<Object?> get props => [id, movieId, seatIds, totalPrice, bookingTime, qrCodeData];
+  List<Object?> get props => [id, movieId, seatIds, totalPrice, bookingTime, qrCodeData, showtimeId, roomName, startTime];
 }

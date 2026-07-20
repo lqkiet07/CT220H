@@ -69,6 +69,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  String _formatShowtime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final date = DateTime.parse(isoString);
+      return DateFormat('HH:mm - dd/MM').format(date);
+    } catch (e) {
+      return isoString;
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -161,9 +171,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 const SizedBox(height: 8),
                                 const Text('Rạp chiếu: CT220H Cinema', style: TextStyle(color: Colors.white70)),
                                 const SizedBox(height: 4),
-                                const Text('Phòng chiếu: Phòng 1', style: TextStyle(color: Colors.white70)),
+                                Text('Phòng chiếu: ${widget.bookingData['roomName'] ?? 'Phòng chiếu'}', style: const TextStyle(color: Colors.white70)),
                                 const SizedBox(height: 4),
-                                const Text('Thời gian: 19:30 - Hôm nay', style: TextStyle(color: Colors.white70)),
+                                Text('Thời gian: ${_formatShowtime(widget.bookingData['startTime'])}', style: const TextStyle(color: Colors.white70)),
                               ],
                             ),
                           ),

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/qr_service.dart';
 import '../../../data/models/movie.dart';
+import '../../../data/models/ticket.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../providers/booking_provider.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -59,6 +63,25 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
     );
     
     _animationController.forward();
+
+    // Only save ticket if this is a fresh payment (not a re-view from My Tickets)
+    final isNewBooking = widget.bookingData['isNewBooking'] as bool? ?? true;
+    if (isNewBooking) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ticket = Ticket(
+          id: ticketId,
+          movieId: widget.bookingData['movieId'] ?? '',
+          showtimeId: widget.bookingData['showtimeId'] ?? '',
+          roomName: widget.bookingData['roomName'] ?? '',
+          startTime: widget.bookingData['startTime'] ?? '',
+          seatIds: (widget.bookingData['seats'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+          totalPrice: widget.bookingData['totalPrice'] as double? ?? 0.0,
+          bookingTime: DateTime.now(),
+          qrCodeData: ticketId,
+        );
+        context.read<BookingProvider>().addTicket(ticket);
+      });
+    }
   }
 
   @override
@@ -185,9 +208,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
                         const SizedBox(height: 12),
                         _buildInfoRow('Rạp', 'CT220H Cinema'),
                         const SizedBox(height: 12),
-                        _buildInfoRow('Phòng', 'Phòng 1'),
+                        _buildInfoRow('Phòng', widget.bookingData['roomName'] ?? 'Phòng chiếu'),
                         const SizedBox(height: 12),
-                        _buildInfoRow('Thời gian', '19:30 - Hôm nay'),
+                        _buildInfoRow('Thời gian', _formatShowtime(widget.bookingData['startTime'])),
                         const SizedBox(height: 12),
                         _buildInfoRow('Ghế', seats),
                       ],
@@ -197,31 +220,55 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
                 ),
 
                 const SizedBox(height: 32),
-                
-                // NÚT VỀ TRANG CHỦ
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Xóa toàn bộ lịch sử trang và bay thẳng về Trang Chủ
-                      context.go('/');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+
+                // BUTTONS: 2 nút nằm ngang cạnh nhau
+                Row(
+                  children: [
+                    // NÚT VỀ TRANG CHỦ
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => context.go('/'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'TRANG CHỦ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'VỀ TRANG CHỦ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                    const SizedBox(width: 12),
+                    // NÚT XEM VÉ CỦA TÔI
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => context.go('/my_tickets'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: const Text(
+                          'VÉ CỦA TÔI',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 20),
               ],
@@ -245,6 +292,16 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> with SingleTick
         ),
       ],
     );
+  }
+
+  String _formatShowtime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final date = DateTime.parse(isoString);
+      return DateFormat('HH:mm - dd/MM').format(date);
+    } catch (e) {
+      return isoString;
+    }
   }
 }
 

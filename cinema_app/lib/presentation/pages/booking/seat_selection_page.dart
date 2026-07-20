@@ -15,9 +15,19 @@ import '../../providers/showtime_provider.dart';
 
 class SeatSelectionPage extends StatefulWidget {
   final String movieId;
-  final Showtime? showtime; // Truyền từ trang chọn suất chiếu
+  final String showtimeId;
+  final String roomName;
+  final String startTime;
+  final Showtime? showtime;
 
-  const SeatSelectionPage({super.key, required this.movieId, this.showtime});
+  const SeatSelectionPage({
+    super.key,
+    required this.movieId,
+    this.showtime,
+    this.showtimeId = '',
+    this.roomName = 'Phòng chiếu',
+    this.startTime = '',
+  });
 
   @override
   State<SeatSelectionPage> createState() => _SeatSelectionPageState();
@@ -271,16 +281,37 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ],
           ),
           ElevatedButton(
-            onPressed: selectedSeatIds.isEmpty ? null : () {
-              context.push('/checkout', extra: {
-                'movieId': widget.movieId,
-                'showtimeId': _showtime!.id,
-                'seats': selectedSeatIds.toList(),
-                'totalPrice': totalPrice,
-              });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
-            child: const Text('TIẾP TỤC', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: selectedSeatIds.isEmpty
+                ? null
+                : () {
+                    context.push(
+                      '/checkout',
+                      extra: {
+                        'movieId': widget.movieId,
+                        'showtimeId': _showtime?.id ?? widget.showtimeId,
+                        'roomName': _showtime != null ? 'Phòng ${_showtime!.roomId}' : widget.roomName,
+                        'startTime': _showtime?.startTime.toIso8601String() ?? widget.startTime,
+                        'seats': selectedSeatIds.toList()..sort(),
+                        'totalPrice': totalPrice,
+                      },
+                    );
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              disabledBackgroundColor: Colors.grey.shade800,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'TIẾP TỤC',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),

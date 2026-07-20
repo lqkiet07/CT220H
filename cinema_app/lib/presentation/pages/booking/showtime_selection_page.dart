@@ -190,10 +190,13 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
                         onTap: () {
                            context.push(
                             '/booking/${widget.movieId}',
-                            extra: {'showtime': showtime},
+                            extra: {
+                              'showtime': showtime,
+                              'showtimeId': showtime.id,
+                              'roomName': 'Phòng ${showtime.roomId}',
+                              'startTime': showtime.startTime.toIso8601String(),
+                            },
                           );
-                        },
-                      ),
                     );
                   },
                 ),

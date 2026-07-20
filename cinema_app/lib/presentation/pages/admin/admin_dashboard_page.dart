@@ -139,7 +139,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.qr_code_scanner_rounded,
                     color: Colors.greenAccent.shade700,
                     onTap: () {
-                      SnackbarUtils.showInfo(context, 'Chức năng Soát Vé bằng Camera sắp ra mắt!');
+                      context.push('/admin_qr_scanner');
                     },
                   ),
                   _buildAdminMenuCard(
@@ -148,7 +148,7 @@ class AdminDashboardPage extends StatelessWidget {
                     icon: Icons.people_alt_rounded,
                     color: Colors.purpleAccent,
                     onTap: () {
-                      SnackbarUtils.showInfo(context, 'Tính năng Quản lý Khách Hàng đang phát triển!');
+                      context.push('/admin_customers');
                     },
                   ),
                 ],

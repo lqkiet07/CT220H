@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/models/movie.dart';
+import '../../../data/models/ticket.dart';
+import '../../../data/mock/mock_data.dart';
+import '../../providers/booking_provider.dart';
 
 class MyTicketsPage extends StatelessWidget {
   const MyTicketsPage({super.key});
@@ -13,6 +19,16 @@ class MyTicketsPage extends StatelessWidget {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.background,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
+          ),
           title: const Text(
             'Vé của tôi',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -44,30 +60,48 @@ class _UpcomingTicketsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    final tickets = context.watch<BookingProvider>().upcomingTickets;
+
+    if (tickets.isEmpty) {
+      return const _EmptyTicketsState(
+        message: 'Không có vé sắp chiếu nào.',
+        subMessage: 'Hãy chọn bộ phim yêu thích của bạn và đặt vé ngay nhé!',
+      );
+    }
+
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const BouncingScrollPhysics(),
-      children: [
-        _buildTicketCard(
-          context: context,
-          movieTitle: 'Deadpool & Wolverine',
-          date: 'Hôm nay, 14:30',
-          cinema: 'Rạp 1 - CT220H Cinema',
-          seats: 'G8, G9',
-          imageUrl: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',
-          isPast: false,
-        ),
-        const SizedBox(height: 16),
-        _buildTicketCard(
-          context: context,
-          movieTitle: 'Mai',
-          date: 'Ngày mai, 19:00',
-          cinema: 'Rạp 3 - CT220H Cinema',
-          seats: 'V10, V11',
-          imageUrl: 'https://image.tmdb.org/t/p/w500/1XyBGEgjeGg1s6p4m0LpXyFk3bN.jpg',
-          isPast: false,
-        ),
-      ],
+      itemCount: tickets.length,
+      itemBuilder: (context, index) {
+        final ticket = tickets[index];
+        final movie = MockData.getMovies().firstWhere(
+          (m) => m.id == ticket.movieId,
+          orElse: () => const Movie(id: '', title: 'Phim không xác định', posterUrl: '', rating: 0, durationMinutes: 0, basePrice: 0, genres: []),
+        );
+
+        String displayDate = '';
+        try {
+          final date = DateTime.parse(ticket.startTime);
+          displayDate = DateFormat('HH:mm - dd/MM/yyyy').format(date);
+        } catch (e) {
+          displayDate = ticket.startTime;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: _buildTicketCard(
+            context: context,
+            ticket: ticket,
+            movieTitle: movie.title,
+            date: displayDate,
+            cinema: 'CT220H Cinema - ${ticket.roomName}',
+            seats: ticket.seatIds.join(', '),
+            imageUrl: movie.posterUrl,
+            isPast: false,
+          ),
+        );
+      },
     );
   }
 }
@@ -77,26 +111,111 @@ class _PastTicketsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    final tickets = context.watch<BookingProvider>().pastTickets;
+
+    if (tickets.isEmpty) {
+      return const _EmptyTicketsState(
+        message: 'Lịch sử xem phim trống.',
+        subMessage: 'Bạn chưa xem bộ phim nào gần đây.',
+      );
+    }
+
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const BouncingScrollPhysics(),
-      children: [
-        _buildTicketCard(
-          context: context,
-          movieTitle: 'Spider-Man: No Way Home',
-          date: '10/12/2023, 20:00',
-          cinema: 'Rạp 2 - CT220H Cinema',
-          seats: 'E4, E5',
-          imageUrl: 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1R80vEM400kI1S.jpg',
-          isPast: true,
+      itemCount: tickets.length,
+      itemBuilder: (context, index) {
+        final ticket = tickets[index];
+        final movie = MockData.getMovies().firstWhere(
+          (m) => m.id == ticket.movieId,
+          orElse: () => const Movie(id: '', title: 'Phim không xác định', posterUrl: '', rating: 0, durationMinutes: 0, basePrice: 0, genres: []),
+        );
+
+        String displayDate = '';
+        try {
+          final date = DateTime.parse(ticket.startTime);
+          displayDate = DateFormat('HH:mm - dd/MM/yyyy').format(date);
+        } catch (e) {
+          displayDate = ticket.startTime;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: _buildTicketCard(
+            context: context,
+            ticket: ticket,
+            movieTitle: movie.title,
+            date: displayDate,
+            cinema: 'CT220H Cinema - ${ticket.roomName}',
+            seats: ticket.seatIds.join(', '),
+            imageUrl: movie.posterUrl,
+            isPast: true,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EmptyTicketsState extends StatelessWidget {
+  final String message;
+  final String subMessage;
+
+  const _EmptyTicketsState({
+    required this.message,
+    required this.subMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.03),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.confirmation_num_outlined,
+                size: 80,
+                color: AppColors.primary.withOpacity(0.4),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              subMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
 Widget _buildTicketCard({
   required BuildContext context,
+  required Ticket ticket,
   required String movieTitle,
   required String date,
   required String cinema,
@@ -106,13 +225,7 @@ Widget _buildTicketCard({
 }) {
   return GestureDetector(
     onTap: () {
-      // FIX: Route đúng là '/success', không phải '/payment_success'
-      // Truyền mock data để tránh crash do GoRouter yêu cầu extra không được null
-      context.push('/success', extra: {
-        'movieId': 'm1', // Mock ID, trong thực tế cần lấy từ ticket data
-        'seats': [seats],
-        'totalPrice': 0.0,
-      });
+      context.push('/ticket_detail', extra: ticket);
     },
     child: Opacity(
       opacity: isPast ? 0.6 : 1.0,
@@ -197,7 +310,14 @@ Widget _buildTicketCard({
                                 children: [
                                   const Icon(Icons.calendar_month_rounded, size: 14, color: AppColors.primary),
                                   const SizedBox(width: 6),
-                                  Text(date, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  Expanded(
+                                    child: Text(
+                                      date,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 6),
@@ -205,7 +325,14 @@ Widget _buildTicketCard({
                                 children: [
                                   const Icon(Icons.location_on_rounded, size: 14, color: Colors.white54),
                                   const SizedBox(width: 6),
-                                  Text(cinema, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  Expanded(
+                                    child: Text(
+                                      cinema,
+                                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 6),
@@ -213,7 +340,14 @@ Widget _buildTicketCard({
                                 children: [
                                   const Icon(Icons.chair_rounded, size: 14, color: Colors.white54),
                                   const SizedBox(width: 6),
-                                  Text('Ghế: $seats', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  Expanded(
+                                    child: Text(
+                                      'Ghế: $seats',
+                                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],

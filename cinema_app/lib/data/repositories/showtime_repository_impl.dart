@@ -1,35 +1,25 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/showtime_repository.dart';
 import '../models/showtime.dart';
 import '../models/seat.dart';
+import '../remote/api_service.dart';
+import '../mock/mock_data.dart';
 
 class ShowtimeRepositoryImpl implements ShowtimeRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ApiService _apiService;
 
-  ShowtimeRepositoryImpl();
+  ShowtimeRepositoryImpl(this._apiService);
 
   // ── READ ──────────────────────────────────────────────────────
 
   @override
   Future<List<Showtime>> getShowtimesByMovie(String movieId) async {
-    try {
-      final snapshot = await _firestore
-          .collection('showtimes')
-          .where('movieId', isEqualTo: movieId)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Showtime.fromJson(data);
-      }).toList();
-    } catch (e) {
-      throw Exception('Lỗi tải lịch chiếu: $e');
-    }
+    await Future.delayed(const Duration(milliseconds: 300));
+    return MockData.getShowtimes().where((s) => s.movieId == movieId).toList();
   }
 
   @override
   Future<List<Seat>> getSeatsByShowtime(String showtimeId) async {
+<<<<<<< HEAD
     try {
       final doc =
           await _firestore.collection('showtimes').doc(showtimeId).get();
@@ -50,26 +40,23 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     } catch (e) {
       throw Exception('Lỗi tải danh sách ghế đã đặt: $e');
     }
+=======
+    await Future.delayed(const Duration(milliseconds: 300));
+    return MockData.getSeats();
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
   }
 
   @override
   Future<List<Showtime>> getAllShowtimes() async {
-    try {
-      final snapshot = await _firestore.collection('showtimes').get();
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Showtime.fromJson(data);
-      }).toList();
-    } catch (e) {
-      throw Exception('Lỗi tải tất cả lịch chiếu: $e');
-    }
+    await Future.delayed(const Duration(milliseconds: 300));
+    return MockData.getShowtimes();
   }
 
   // ── ADMIN CRUD ────────────────────────────────────────────────
 
   @override
   Future<void> addShowtime(Showtime showtime) async {
+<<<<<<< HEAD
     try {
       final data = showtime.toJson();
       data['startTime'] = Timestamp.fromDate(showtime.startTime);
@@ -79,10 +66,15 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     } catch (e) {
       throw Exception('Lỗi thêm suất chiếu: $e');
     }
+=======
+    await Future.delayed(const Duration(milliseconds: 300));
+    MockData.addShowtime(showtime);
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
   }
 
   @override
   Future<void> updateShowtime(Showtime showtime) async {
+<<<<<<< HEAD
     try {
       final data = showtime.toJson();
       data['startTime'] = Timestamp.fromDate(showtime.startTime);
@@ -103,5 +95,15 @@ class ShowtimeRepositoryImpl implements ShowtimeRepository {
     } catch (e) {
       throw Exception('Lỗi xóa suất chiếu: $e');
     }
+=======
+    await Future.delayed(const Duration(milliseconds: 300));
+    MockData.updateShowtime(showtime);
+  }
+
+  @override
+  Future<void> deleteShowtime(String id) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    MockData.deleteShowtime(id);
+>>>>>>> 24ec759 (feat(ui): update booking flow, route guard, QR scanner, deep links, and admin customer management)
   }
 }

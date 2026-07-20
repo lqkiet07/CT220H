@@ -155,15 +155,39 @@ class MockData {
     return seats;
   }
 
+  static final List<User> _users = [
+    const User(
+      id: 'u1',
+      name: 'Nguyễn Văn A',
+      email: 'vana@example.com',
+      favoriteMovieIds: ['m1'],
+    ),
+    const User(
+      id: 'u2',
+      name: 'Trần Thị B',
+      email: 'thib@example.com',
+      favoriteMovieIds: ['m2'],
+    ),
+    const User(
+      id: 'u3',
+      name: 'Lê Văn C',
+      email: 'vanc@example.com',
+      favoriteMovieIds: [],
+    ),
+    const User(
+      id: 'u4',
+      name: 'Phạm Minh Hoàng',
+      email: 'hoangpm@example.com',
+      favoriteMovieIds: ['m1', 'm2'],
+    ),
+  ];
+
   static List<User> getUsers() {
-    return const [
-      User(
-        id: 'u1',
-        name: 'Nguyễn Văn A',
-        email: 'vana@example.com',
-        favoriteMovieIds: ['m1'],
-      ),
-    ];
+    return _users.toList();
+  }
+
+  static void deleteUser(String id) {
+    _users.removeWhere((u) => u.id == id);
   }
 
   static List<Review> getReviews() {
